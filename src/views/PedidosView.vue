@@ -7,13 +7,15 @@ import BaseBadge from '@/components/ui/BaseBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonTable from '@/components/ui/SkeletonTable.vue'
 import PedidoFormModal from './pedidos/PedidoFormModal.vue'
+import PedidoComprobante from './pedidos/PedidoComprobante.vue'
 import { formatMoney, formatDate, formatQty } from '@/utils/format'
-import type { EstadoPedido } from '@/types/erp'
+import type { EstadoPedido, Pedido } from '@/types/erp'
 
 const pedidos = usePedidosStore()
 const userStore = useUserStore()
 const modalOpen = ref(false)
 const expandido = ref<string | null>(null)
+const comprobante = ref<Pedido | null>(null)
 
 onMounted(() => pedidos.fetch())
 
@@ -79,7 +81,7 @@ async function decidir(id: string, estado: 'aprobado' | 'rechazado') {
       <li v-for="(p, i) in pedidos.data" :key="p._id" class="ped stagger-item" :style="{ '--i': i }">
         <div class="ped__head" @click="expandido = expandido === p._id ? null : p._id">
           <div class="ped__info">
-            <strong>{{ p.clienteNombre }}</strong>
+            <strong>{{ p.clienteNombre }} <code class="ped__num">{{ p.numero }}</code></strong>
             <small>
               {{ p.items.length }} producto{{ p.items.length > 1 ? 's' : '' }} · {{ formatDate(p.createdAt) }}
               <template v-if="userStore.isAdmin"> · {{ p.vendedorNombre }}</template>
@@ -101,6 +103,10 @@ async function decidir(id: string, estado: 'aprobado' | 'rechazado') {
           <p v-if="p.observacion" class="ped__obs">{{ p.observacion }}</p>
           <p v-if="p.motivoRechazo" class="ped__rech">Rechazo: {{ p.motivoRechazo }}</p>
 
+          <button type="button" class="ped__comp" @click="comprobante = p">
+            <i class="fa-solid fa-file-invoice"></i> Ver comprobante
+          </button>
+
           <div v-if="userStore.isAdmin && p.estado === 'enviado'" class="ped__acc">
             <button type="button" class="ok" @click="decidir(p._id, 'aprobado')">Aprobar</button>
             <button type="button" class="no" @click="decidir(p._id, 'rechazado')">Rechazar</button>
@@ -110,6 +116,7 @@ async function decidir(id: string, estado: 'aprobado' | 'rechazado') {
     </ul>
 
     <PedidoFormModal :open="modalOpen" @close="modalOpen = false" />
+    <PedidoComprobante :open="!!comprobante" :pedido="comprobante" @close="comprobante = null" />
   </div>
 </template>
 
@@ -133,6 +140,12 @@ async function decidir(id: string, estado: 'aprobado' | 'rechazado') {
   &__caret { font-size: 0.7rem; color: var(--text-faint); transition: transform 0.2s var(--ease-out);
     &.is-open { transform: rotate(180deg); } }
   &__detail { padding: 4px 16px 16px; border-top: 1px solid var(--border); }
+  &__num { font-family: $font-secondary; font-size: 0.66rem; font-weight: 700; color: $primary;
+    background: var(--accent-soft); border-radius: 5px; padding: 1px 6px; margin-left: 6px; }
+  &__comp { margin-top: 12px; padding: 8px 14px; border: 1px solid var(--border-strong); border-radius: 8px;
+    background: var(--surface); font-family: $font-principal; font-size: 0.76rem; font-weight: 700; color: var(--text); cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px;
+    &:hover { border-color: $primary; color: $primary; } }
   &__obs { font-family: $font-secondary; font-size: 0.76rem; color: var(--text-soft); margin-top: 8px; font-style: italic; }
   &__rech { font-family: $font-secondary; font-size: 0.76rem; color: darken($alert-error, 6%); margin-top: 6px; }
   &__acc { display: flex; gap: 8px; margin-top: 12px;
