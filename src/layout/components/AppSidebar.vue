@@ -26,6 +26,7 @@ const icons: Record<string, string> = {
   file: 'fa-file-invoice-dollar',
   chart: 'fa-chart-column',
   cash: 'fa-money-bill-wave',
+  cart: 'fa-cart-shopping',
   key: 'fa-key',
   user: 'fa-circle-user',
 }
@@ -45,6 +46,10 @@ const allSections: { title: string; items: NavItem[] }[] = [
   {
     title: 'Operación',
     items: [{ to: '/inventario', label: 'Inventario', icon: 'box' }],
+  },
+  {
+    title: 'Operación comercial',
+    items: [{ to: '/pedidos', label: 'Pedidos', icon: 'cart' }],
   },
   {
     title: 'Finanzas',
