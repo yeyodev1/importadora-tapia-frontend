@@ -55,6 +55,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: 'Cartera · Consolidada' },
       },
       {
+        path: 'pedidos',
+        name: 'Pedidos',
+        component: () => import('../views/PedidosView.vue'),
+        meta: { title: 'Pedidos' },
+      },
+      {
         path: 'cobros',
         name: 'Cobros',
         component: () => import('../views/CobrosView.vue'),
