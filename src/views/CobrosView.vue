@@ -81,6 +81,9 @@ async function aplicar(id: string, estado: 'aplicado' | 'rechazado') {
         <a :href="c.comprobanteUrl" target="_blank" rel="noopener" class="cobro__foto">
           <img :src="c.comprobanteUrl" alt="Comprobante" loading="lazy" />
         </a>
+        <a v-if="c.firmaUrl" :href="c.firmaUrl" target="_blank" rel="noopener" class="cobro__firma" title="Firma del cliente">
+          <img :src="c.firmaUrl" alt="Firma" loading="lazy" />
+        </a>
         <div class="cobro__info">
           <strong>{{ c.clienteNombre }}</strong>
           <small>
@@ -126,6 +129,11 @@ async function aplicar(id: string, estado: 'aplicado' | 'rechazado') {
     flex-shrink: 0; width: 54px; height: 54px; border-radius: 10px; overflow: hidden;
     border: 1px solid var(--border); background: var(--ground);
     img { width: 100%; height: 100%; object-fit: cover; }
+  }
+  &__firma {
+    flex-shrink: 0; width: 54px; height: 40px; border-radius: 8px; overflow: hidden;
+    border: 1px solid var(--border); background: #fff;
+    img { width: 100%; height: 100%; object-fit: contain; }
   }
   &__info { flex: 1; min-width: 0;
     strong { display: block; font-size: 0.88rem; font-weight: 700; }
