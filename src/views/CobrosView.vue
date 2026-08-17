@@ -85,7 +85,7 @@ async function aplicar(id: string, estado: 'aplicado' | 'rechazado') {
           <img :src="c.firmaUrl" alt="Firma" loading="lazy" />
         </a>
         <div class="cobro__info">
-          <strong>{{ c.clienteNombre }}</strong>
+          <strong>{{ c.clienteNombre }} <code class="cobro__num">{{ c.numero }}</code></strong>
           <small>
             {{ metodoLabel[c.metodoPago] }}
             <template v-if="c.facturaRef"> · Fact. {{ c.facturaRef }}</template>
@@ -135,6 +135,8 @@ async function aplicar(id: string, estado: 'aplicado' | 'rechazado') {
     border: 1px solid var(--border); background: #fff;
     img { width: 100%; height: 100%; object-fit: contain; }
   }
+  &__num { font-family: $font-secondary; font-size: 0.64rem; font-weight: 700; color: $secondary;
+    background: rgba($secondary, 0.12); border-radius: 5px; padding: 1px 6px; margin-left: 4px; }
   &__info { flex: 1; min-width: 0;
     strong { display: block; font-size: 0.88rem; font-weight: 700; }
     small { font-family: $font-secondary; font-size: 0.72rem; color: var(--text-faint); }
