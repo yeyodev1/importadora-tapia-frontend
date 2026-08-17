@@ -1,0 +1,102 @@
+<script setup lang="ts">
+import BaseBadge from '@/components/ui/BaseBadge.vue'
+import DataTable, { type Column } from '@/components/ui/DataTable.vue'
+import { formatMoney, formatDate } from '@/utils/format'
+import type { FacturaCartera } from '@/types/erp'
+
+defineProps<{
+  facturas: FacturaCartera[]
+  loading: boolean
+  error: string | null
+}>()
+
+defineEmits<{ retry: [] }>()
+
+const columns: Column[] = [
+  { key: 'documento', label: 'Documento' },
+  { key: 'trc_fecha', label: 'Emisión', sortable: true },
+  { key: 'fecha_vencimiento', label: 'Vencimiento', sortable: true },
+  { key: 'trc_totfact', label: 'Total', align: 'right', sortable: true },
+  { key: 'saldo_pendiente', label: 'Saldo', align: 'right', sortable: true },
+  { key: 'estado_factura', label: 'Estado', align: 'center' },
+]
+</script>
+
+<template>
+  <DataTable
+    :columns="columns"
+    :rows="facturas"
+    :loading="loading"
+    :error="error"
+    :page-size="10"
+    @retry="$emit('retry')"
+  >
+    <template #cell-documento="{ row }">
+      <code class="doc">{{ row.trc_serdoc }}-{{ row.trc_numdoc }}</code>
+    </template>
+    <template #cell-trc_fecha="{ value }">{{ formatDate(value) }}</template>
+    <template #cell-fecha_vencimiento="{ value }">{{ formatDate(value) }}</template>
+    <template #cell-trc_totfact="{ value }">{{ formatMoney(value) }}</template>
+    <template #cell-saldo_pendiente="{ value }">
+      <b :class="{ 'sin-saldo': Number(value) === 0 }">{{ formatMoney(value) }}</b>
+    </template>
+    <template #cell-estado_factura="{ value }">
+      <BaseBadge :tone="value === 'VENCIDO' ? 'danger' : 'success'">
+        {{ value === 'VENCIDO' ? 'Vencida' : 'Vigente' }}
+      </BaseBadge>
+    </template>
+
+    <template #mobile-card="{ row }">
+      <div class="fmcard">
+        <div class="fmcard__head">
+          <code class="doc">{{ row.trc_serdoc }}-{{ row.trc_numdoc }}</code>
+          <BaseBadge :tone="row.estado_factura === 'VENCIDO' ? 'danger' : 'success'">
+            {{ row.estado_factura === 'VENCIDO' ? 'Vencida' : 'Vigente' }}
+          </BaseBadge>
+        </div>
+        <p>Vence {{ formatDate(row.fecha_vencimiento) }} · Total {{ formatMoney(row.trc_totfact) }}</p>
+        <b>Saldo {{ formatMoney(row.saldo_pendiente) }}</b>
+      </div>
+    </template>
+  </DataTable>
+</template>
+
+<style lang="scss" scoped>
+.doc {
+  font-family: $font-secondary;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  background: rgba($primary-dark, 0.05);
+  border-radius: 5px;
+  padding: 2px 7px;
+}
+
+.sin-saldo {
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
+.fmcard {
+  font-family: $font-secondary;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  p {
+    margin-top: 6px;
+    font-size: 0.74rem;
+    color: var(--text-soft);
+  }
+
+  b {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.84rem;
+    font-variant-numeric: tabular-nums;
+  }
+}
+</style>
