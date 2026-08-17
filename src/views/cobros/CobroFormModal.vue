@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import { useCobrosStore } from '@/stores/cobros'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import SignaturePad from '@/components/ui/SignaturePad.vue'
 import { fileToCompressedDataUri } from '@/utils/image'
 import type { MetodoPago } from '@/types/erp'
 import type { ApiError } from '@/types'
@@ -21,6 +22,7 @@ const monto = ref<number | null>(null)
 const metodo = ref<MetodoPago>('efectivo')
 const observacion = ref('')
 const comprobante = ref('')
+const firma = ref('')
 const fileName = ref('')
 const preparing = ref(false)
 const saving = ref(false)
@@ -46,6 +48,7 @@ watch(
     metodo.value = 'efectivo'
     observacion.value = ''
     comprobante.value = ''
+    firma.value = ''
     fileName.value = ''
   },
 )
@@ -85,6 +88,7 @@ async function guardar() {
       monto: Number(monto.value),
       metodoPago: metodo.value,
       comprobante: comprobante.value || tinyPlaceholder(),
+      firma: firma.value || undefined,
       observacion: observacion.value || undefined,
     })
     emit('saved')
@@ -167,6 +171,11 @@ function tinyPlaceholder() {
                   <span>Tomar foto o elegir imagen</span>
                 </template>
               </label>
+            </div>
+
+            <div class="fld">
+              <span>Firma del cliente <em class="opt">· opcional</em></span>
+              <SignaturePad @change="(v) => (firma = v || '')" />
             </div>
 
             <label class="fld">
