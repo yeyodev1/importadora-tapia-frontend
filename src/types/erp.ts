@@ -66,6 +66,7 @@ export type EstadoCobro = 'registrado' | 'aplicado' | 'rechazado'
 
 export interface Cobro {
   _id: string
+  numero: string
   vendedorNombre: string
   venCodigo?: string
   clienteNombre: string
@@ -105,6 +106,7 @@ export interface PedidoItem {
 
 export interface Pedido {
   _id: string
+  numero: string
   vendedorNombre: string
   clienteNombre: string
   clienteCodigo?: string
