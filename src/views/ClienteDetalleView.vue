@@ -7,6 +7,7 @@ import { ref } from 'vue'
 import ClienteResumenCredito from './cliente/ClienteResumenCredito.vue'
 import ClienteFacturasTabla from './cliente/ClienteFacturasTabla.vue'
 import CobroFormModal from './cobros/CobroFormModal.vue'
+import PedidoFormModal from './pedidos/PedidoFormModal.vue'
 import { initials } from '@/utils/format'
 
 /** Tope de facturas abiertas por cliente (política actual; el ERP guarda el real por cliente). */
@@ -50,6 +51,7 @@ const telefono = computed(() => {
 })
 
 const cobroOpen = ref(false)
+const pedidoOpen = ref(false)
 </script>
 
 <template>
@@ -76,9 +78,9 @@ const cobroOpen = ref(false)
           </p>
         </div>
         <div class="hero__actions">
+          <button class="is-pedido" type="button" @click="pedidoOpen = true">Nuevo pedido</button>
           <button class="is-cobro" type="button" @click="cobroOpen = true">Registrar cobro</button>
           <a v-if="telefono" :href="`tel:${telefono}`">Llamar</a>
-          <a v-if="cliente.per_email" :href="`mailto:${cliente.per_email}`">Email</a>
         </div>
       </section>
 
@@ -103,6 +105,12 @@ const cobroOpen = ref(false)
         :cliente-nombre="cliente.per_nombre"
         :cliente-codigo="cliente.per_codigo"
         @close="cobroOpen = false"
+      />
+      <PedidoFormModal
+        :open="pedidoOpen"
+        :cliente-nombre="cliente.per_nombre"
+        :cliente-codigo="cliente.per_codigo"
+        @close="pedidoOpen = false"
       />
     </template>
 
@@ -215,6 +223,15 @@ const cobroOpen = ref(false)
 
       &:hover {
         background: darken($secondary, 6%);
+      }
+    }
+
+    .is-pedido {
+      background: $primary;
+      color: $white;
+
+      &:hover {
+        background: darken($primary, 6%);
       }
     }
   }
