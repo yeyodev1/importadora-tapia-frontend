@@ -1,0 +1,102 @@
+export interface Cliente {
+  per_codigo: string
+  per_nombre: string
+  per_direccion: string
+  per_identificacion: string
+  per_telefono: string
+  per_email: string
+  ven_nombre: string
+  ven_codigo: string
+}
+
+export interface Vendedor {
+  ven_codigo: string
+  ven_nombre: string
+}
+
+export type EstadoFactura = 'VIGENTE' | 'VENCIDO' | string
+
+export interface FacturaCartera {
+  per_nombre: string
+  per_diascredito: number
+  trc_codigo: string
+  trc_serdoc: string
+  trc_numdoc: string
+  trc_totfact: string
+  trc_fecha: string
+  fecha_vencimiento: string
+  total_abonado: string
+  saldo_pendiente: string
+  estado_factura: EstadoFactura
+}
+
+export interface CarteraConsolidada {
+  per_codigo: string
+  per_nombre: string
+  deuda_total: string
+}
+
+export interface InventarioItem {
+  pro_codigo: string
+  pro_nombre: string
+  uni_nombre: string
+  bod_codigo: string
+  bod_nombre: string
+  stock_actual: string
+}
+
+export interface ErpListResponse<T> {
+  success: boolean
+  data: T[]
+}
+
+export type UserRole = 'admin' | 'vendedor'
+
+export interface AppUser {
+  id: string
+  email: string
+  name: string
+  role: UserRole
+  venCodigo: string | null
+  createdAt?: string
+}
+
+export type MetodoPago = 'efectivo' | 'transferencia' | 'cheque' | 'deposito'
+export type EstadoCobro = 'registrado' | 'aplicado' | 'rechazado'
+
+export interface Cobro {
+  _id: string
+  vendedorNombre: string
+  venCodigo?: string
+  clienteNombre: string
+  clienteCodigo?: string
+  facturaRef?: string
+  monto: number
+  metodoPago: MetodoPago
+  comprobanteUrl: string
+  observacion?: string
+  estado: EstadoCobro
+  createdAt: string
+}
+
+export interface NuevoCobro {
+  clienteNombre: string
+  clienteCodigo?: string
+  facturaRef?: string
+  monto: number
+  metodoPago: MetodoPago
+  comprobante: string
+  observacion?: string
+}
+
+export interface LoginResponse {
+  success: boolean
+  token: string
+  user: {
+    id: string
+    email: string
+    name: string
+    role: UserRole
+    venCodigo: string | null
+  }
+}
