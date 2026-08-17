@@ -74,6 +74,7 @@ export interface Cobro {
   monto: number
   metodoPago: MetodoPago
   comprobanteUrl: string
+  firmaUrl?: string
   observacion?: string
   estado: EstadoCobro
   createdAt: string
@@ -86,6 +87,39 @@ export interface NuevoCobro {
   monto: number
   metodoPago: MetodoPago
   comprobante: string
+  firma?: string
+  observacion?: string
+}
+
+export type EstadoPedido = 'enviado' | 'aprobado' | 'rechazado'
+
+export interface PedidoItem {
+  productoCodigo: string
+  productoNombre: string
+  unidad?: string
+  bodega?: string
+  cantidad: number
+  precioUnitario: number
+  subtotal: number
+}
+
+export interface Pedido {
+  _id: string
+  vendedorNombre: string
+  clienteNombre: string
+  clienteCodigo?: string
+  items: PedidoItem[]
+  total: number
+  observacion?: string
+  motivoRechazo?: string
+  estado: EstadoPedido
+  createdAt: string
+}
+
+export interface NuevoPedido {
+  clienteNombre: string
+  clienteCodigo?: string
+  items: Omit<PedidoItem, 'subtotal'>[]
   observacion?: string
 }
 
