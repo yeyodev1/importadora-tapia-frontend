@@ -3,11 +3,16 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import AppSidebar from './components/AppSidebar.vue'
 import AppTopbar from './components/AppTopbar.vue'
+import ErpStatusBanner from './components/ErpStatusBanner.vue'
 import { useUserStore } from '@/stores/user'
+import { useSystemStore } from '@/stores/system'
 
 const sidebarOpen = ref(false)
 const router = useRouter()
 const userStore = useUserStore()
+const system = useSystemStore()
+
+let estadoTimer: number | undefined
 
 /** Sesión expirada (401 del backend): limpiar y volver al login. */
 function onTokenExpired() {
@@ -18,10 +23,14 @@ function onTokenExpired() {
 onMounted(() => {
   userStore.hydrate()
   window.addEventListener('auth:token-expired', onTokenExpired)
+  // Verifica el estado del ERP al entrar y cada 60 segundos.
+  system.check()
+  estadoTimer = window.setInterval(() => system.check(), 60000)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('auth:token-expired', onTokenExpired)
+  if (estadoTimer) window.clearInterval(estadoTimer)
 })
 </script>
 
@@ -31,6 +40,7 @@ onBeforeUnmount(() => {
 
     <div class="layout__main">
       <AppTopbar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
+      <ErpStatusBanner />
 
       <main class="layout__content">
         <RouterView v-slot="{ Component }">
