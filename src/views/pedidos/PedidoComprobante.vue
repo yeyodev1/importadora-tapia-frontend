@@ -99,6 +99,9 @@ Estado: ${estadoTexto[p.estado]}`
               </tfoot>
             </table>
 
+            <a v-if="pedido.fotoUrl" :href="pedido.fotoUrl" target="_blank" rel="noopener" class="doc__foto">
+              <img :src="pedido.fotoUrl" alt="Foto del pedido" />
+            </a>
             <p v-if="pedido.observacion" class="doc__obs">{{ pedido.observacion }}</p>
             <p class="doc__foot">
               Este comprobante es un respaldo de la orden de pedido. La facturación se procesa
@@ -151,6 +154,7 @@ Estado: ${estadoTexto[p.estado]}`
     tfoot td { border-bottom: none; padding-top: 12px; font-weight: 800; }
     &__total, .doc__total { font-size: 1.05rem; color: $primary; } }
   &__total { font-size: 1.05rem; color: $primary; }
+  &__foto { display: block; margin-top: 14px; img { max-height: 140px; border-radius: 8px; border: 1px solid #E5E9F0; } }
   &__obs { margin-top: 14px; font-size: 0.76rem; color: #48587C; font-style: italic; }
   &__foot { margin-top: 16px; padding-top: 12px; border-top: 1px dashed #E5E9F0; font-size: 0.68rem; color: #8593B0; }
 }
