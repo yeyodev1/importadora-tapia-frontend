@@ -117,6 +117,7 @@ export interface Pedido {
   clienteCodigo?: string
   items: PedidoItem[]
   total: number
+  fotoUrl?: string
   observacion?: string
   motivoRechazo?: string
   estado: EstadoPedido
@@ -127,6 +128,7 @@ export interface NuevoPedido {
   clienteNombre: string
   clienteCodigo?: string
   items: Omit<PedidoItem, 'subtotal'>[]
+  foto?: string
   observacion?: string
 }
 
