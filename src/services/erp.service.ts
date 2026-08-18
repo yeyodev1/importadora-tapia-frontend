@@ -8,6 +8,7 @@ import type {
   InventarioDisponible,
   ErpListResponse,
   LoginResponse,
+  EstadoErp,
 } from '@/types/erp'
 
 class ErpService extends APIBase {
@@ -19,6 +20,12 @@ class ErpService extends APIBase {
   async me(): Promise<LoginResponse['user']> {
     const res = await this.get<{ success: boolean; user: LoginResponse['user'] }>('auth/me')
     return res.data.user
+  }
+
+  /** Diagnóstico de conexión con el ERP (ping real + estado del cache). */
+  async estadoErp(): Promise<EstadoErp> {
+    const res = await this.get<EstadoErp>('estado/erp')
+    return res.data
   }
 
   async getClientes(): Promise<Cliente[]> {
