@@ -28,6 +28,7 @@ const icons: Record<string, string> = {
   cash: 'fa-money-bill-wave',
   cart: 'fa-cart-shopping',
   pin: 'fa-location-dot',
+  route: 'fa-route',
   key: 'fa-key',
   user: 'fa-circle-user',
 }
@@ -53,6 +54,7 @@ const allSections: { title: string; items: NavItem[] }[] = [
     items: [
       { to: '/pedidos', label: 'Pedidos', icon: 'cart' },
       { to: '/visitas', label: 'Visitas', icon: 'pin' },
+      { to: '/recorridos', label: 'Recorridos', icon: 'route' },
     ],
   },
   {
