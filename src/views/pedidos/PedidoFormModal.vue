@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { usePedidosStore } from '@/stores/pedidos'
 import { erpService } from '@/services/erp.service'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import PhotoUpload from '@/components/ui/PhotoUpload.vue'
 import { formatMoney, formatQty } from '@/utils/format'
 import type { InventarioDisponible } from '@/types/erp'
 import type { ApiError } from '@/types'
@@ -26,6 +27,7 @@ const cliente = ref('')
 const observacion = ref('')
 const lineas = ref<Linea[]>([])
 const buscar = ref('')
+const foto = ref('')
 const saving = ref(false)
 const error = ref('')
 const inventario = ref<InventarioDisponible[]>([])
@@ -52,6 +54,7 @@ watch(
     observacion.value = ''
     lineas.value = []
     buscar.value = ''
+    foto.value = ''
   },
 )
 
@@ -118,6 +121,7 @@ async function guardar() {
         cantidad: l.cantidad,
         precioUnitario: l.precioUnitario,
       })),
+      foto: foto.value || undefined,
       observacion: observacion.value || undefined,
     })
     emit('saved')
@@ -196,6 +200,11 @@ async function guardar() {
             </div>
           </div>
 
+          <div class="fld">
+            <span>Foto (opcional) <em class="opt">· local, nota manuscrita, etc.</em></span>
+            <PhotoUpload v-model="foto" label="Adjuntar foto del pedido" />
+          </div>
+
           <label class="fld">
             <span>Observación (opcional)</span>
             <textarea v-model="observacion" rows="2" placeholder="Notas del pedido"></textarea>
@@ -237,7 +246,8 @@ async function guardar() {
     background: rgba($primary, 0.06); border: 1px solid rgba($primary, 0.14); border-radius: 9px; padding: 10px 12px; }
 }
 .fld { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px;
-  span { font-family: $font-secondary; font-size: 0.74rem; font-weight: 600; color: var(--text-soft); }
+  span { font-family: $font-secondary; font-size: 0.74rem; font-weight: 600; color: var(--text-soft);
+    .opt { font-weight: 400; color: var(--text-faint); } }
   input, textarea { padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 9px;
     font-family: $font-secondary; font-size: 0.88rem; color: var(--text); background: var(--surface);
     &:focus { outline: none; border-color: $primary; box-shadow: 0 0 0 3px rgba($primary, 0.12); } }
