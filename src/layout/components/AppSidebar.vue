@@ -27,6 +27,7 @@ const icons: Record<string, string> = {
   chart: 'fa-chart-column',
   cash: 'fa-money-bill-wave',
   cart: 'fa-cart-shopping',
+  pin: 'fa-location-dot',
   key: 'fa-key',
   user: 'fa-circle-user',
 }
@@ -49,7 +50,10 @@ const allSections: { title: string; items: NavItem[] }[] = [
   },
   {
     title: 'Operación comercial',
-    items: [{ to: '/pedidos', label: 'Pedidos', icon: 'cart' }],
+    items: [
+      { to: '/pedidos', label: 'Pedidos', icon: 'cart' },
+      { to: '/visitas', label: 'Visitas', icon: 'pin' },
+    ],
   },
   {
     title: 'Finanzas',
