@@ -5,6 +5,7 @@ import type {
   FacturaCartera,
   CarteraConsolidada,
   InventarioItem,
+  InventarioDisponible,
   ErpListResponse,
   LoginResponse,
 } from '@/types/erp'
@@ -32,6 +33,12 @@ class ErpService extends APIBase {
 
   async getInventario(): Promise<InventarioItem[]> {
     const res = await this.get<ErpListResponse<InventarioItem>>('erp/inventario')
+    return res.data.data
+  }
+
+  /** Inventario con la reserva de pedidos descontada (disponible real). */
+  async getInventarioDisponible(): Promise<InventarioDisponible[]> {
+    const res = await this.get<ErpListResponse<InventarioDisponible>>('inventario/disponible')
     return res.data.data
   }
 
