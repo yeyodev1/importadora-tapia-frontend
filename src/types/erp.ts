@@ -45,6 +45,11 @@ export interface InventarioItem {
   stock_actual: string
 }
 
+export interface InventarioDisponible extends InventarioItem {
+  reservado: number
+  disponible: number
+}
+
 export interface ErpListResponse<T> {
   success: boolean
   data: T[]
