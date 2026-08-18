@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useErpStore } from '@/stores/erp'
 import { usePedidosStore } from '@/stores/pedidos'
+import { erpService } from '@/services/erp.service'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { formatMoney, formatQty } from '@/utils/format'
+import type { InventarioDisponible } from '@/types/erp'
 import type { ApiError } from '@/types'
 
 interface Linea {
@@ -11,7 +12,7 @@ interface Linea {
   productoNombre: string
   unidad?: string
   bodega?: string
-  stock: number
+  disponible: number
   cantidad: number
   precioUnitario: number
 }
@@ -19,7 +20,6 @@ interface Linea {
 const props = defineProps<{ open: boolean; clienteNombre?: string; clienteCodigo?: string }>()
 const emit = defineEmits<{ close: []; saved: [] }>()
 
-const erp = useErpStore()
 const pedidos = usePedidosStore()
 
 const cliente = ref('')
@@ -28,12 +28,25 @@ const lineas = ref<Linea[]>([])
 const buscar = ref('')
 const saving = ref(false)
 const error = ref('')
+const inventario = ref<InventarioDisponible[]>([])
+const cargandoInv = ref(false)
+
+async function cargarInventario() {
+  cargandoInv.value = true
+  try {
+    inventario.value = await erpService.getInventarioDisponible()
+  } catch {
+    inventario.value = []
+  } finally {
+    cargandoInv.value = false
+  }
+}
 
 watch(
   () => props.open,
   (o) => {
     if (!o) return
-    erp.fetchInventario()
+    cargarInventario()
     error.value = ''
     cliente.value = props.clienteNombre || ''
     observacion.value = ''
@@ -45,22 +58,22 @@ watch(
 const resultados = computed(() => {
   const q = buscar.value.trim().toLowerCase()
   if (!q) return []
-  return erp.inventario.data
+  return inventario.value
     .filter((i) => i.pro_nombre.toLowerCase().includes(q))
     .slice(0, 6)
 })
 
-function agregar(item: (typeof erp.inventario.data)[number]) {
+function agregar(item: InventarioDisponible) {
   const ya = lineas.value.find((l) => l.productoCodigo === item.pro_codigo && l.bodega === item.bod_nombre)
   if (ya) {
-    ya.cantidad += 1
+    if (ya.cantidad < ya.disponible) ya.cantidad += 1
   } else {
     lineas.value.push({
       productoCodigo: item.pro_codigo,
       productoNombre: item.pro_nombre,
       unidad: item.uni_nombre,
       bodega: item.bod_nombre,
-      stock: Number(item.stock_actual),
+      disponible: item.disponible,
       cantidad: 1,
       precioUnitario: 0,
     })
@@ -87,9 +100,9 @@ async function guardar() {
     error.value = 'Agrega al menos un producto.'
     return
   }
-  const sobreStock = lineas.value.find((l) => l.cantidad > l.stock)
+  const sobreStock = lineas.value.find((l) => l.cantidad > l.disponible)
   if (sobreStock) {
-    error.value = `${sobreStock.productoNombre}: pediste ${sobreStock.cantidad} pero hay ${formatQty(sobreStock.stock)} en stock.`
+    error.value = `${sobreStock.productoNombre}: pediste ${sobreStock.cantidad} pero solo hay ${formatQty(sobreStock.disponible)} disponible.`
     return
   }
   saving.value = true
@@ -143,11 +156,21 @@ async function guardar() {
               <input v-model="buscar" type="search" placeholder="Buscar en el inventario…" />
             </div>
             <ul v-if="resultados.length" class="results">
-              <li v-for="r in resultados" :key="r.pro_codigo + r.bod_nombre" @click="agregar(r)">
+              <li
+                v-for="r in resultados"
+                :key="r.pro_codigo + r.bod_nombre"
+                :class="{ 'is-agotado': r.disponible <= 0 }"
+                @click="r.disponible > 0 && agregar(r)"
+              >
                 <span>{{ r.pro_nombre }}</span>
-                <small>{{ r.bod_nombre }} · {{ formatQty(r.stock_actual) }} {{ r.uni_nombre }}</small>
+                <small>
+                  {{ r.bod_nombre }} ·
+                  <b :class="r.disponible <= 0 ? 'x' : 'ok'">{{ formatQty(r.disponible) }} {{ r.uni_nombre }} disponible</b>
+                  <template v-if="r.reservado > 0"> · {{ formatQty(r.reservado) }} reservado</template>
+                </small>
               </li>
             </ul>
+            <p v-if="cargandoInv" class="hint-inv">Cargando disponibilidad…</p>
           </div>
 
           <div v-if="lineas.length" class="lineas">
@@ -156,12 +179,20 @@ async function guardar() {
                 <strong>{{ l.productoNombre }}</strong>
                 <button type="button" @click="quitar(i)"><i class="fa-solid fa-trash-can"></i></button>
               </div>
-              <small class="linea__meta">{{ l.bodega }} · stock {{ formatQty(l.stock) }} {{ l.unidad }}</small>
+              <small class="linea__meta">
+                {{ l.bodega }} · <b :class="{ over: l.cantidad > l.disponible }">{{ formatQty(l.disponible) }} {{ l.unidad }} disponible</b>
+              </small>
               <div class="linea__inputs">
-                <label>Cant.<input v-model.number="l.cantidad" type="number" min="0" :max="l.stock" /></label>
+                <label>Cant.
+                  <input v-model.number="l.cantidad" type="number" min="0" :max="l.disponible"
+                    :class="{ 'is-over': l.cantidad > l.disponible }" />
+                </label>
                 <label>Precio<input v-model.number="l.precioUnitario" type="number" min="0" step="0.01" placeholder="0.00" /></label>
                 <span class="linea__sub">{{ formatMoney(l.cantidad * l.precioUnitario) }}</span>
               </div>
+              <small v-if="l.cantidad > l.disponible" class="linea__warn">
+                Supera lo disponible ({{ formatQty(l.disponible) }})
+              </small>
             </div>
           </div>
 
@@ -219,20 +250,26 @@ async function guardar() {
 .results { list-style: none; margin: 6px 0 0; border: 1px solid var(--border); border-radius: 9px; overflow: hidden;
   li { padding: 9px 12px; cursor: pointer; border-bottom: 1px solid var(--border);
     &:last-child { border-bottom: none; } &:hover { background: rgba($primary, 0.05); }
+    &.is-agotado { opacity: 0.5; cursor: not-allowed; &:hover { background: transparent; } }
     span { display: block; font-family: $font-secondary; font-size: 0.82rem; font-weight: 600; }
-    small { font-family: $font-secondary; font-size: 0.7rem; color: var(--text-faint); } }
+    small { font-family: $font-secondary; font-size: 0.7rem; color: var(--text-faint);
+      b { font-weight: 700; &.ok { color: darken($secondary, 10%); } &.x { color: $alert-error; } } } }
 }
+.hint-inv { font-family: $font-secondary; font-size: 0.72rem; color: var(--text-faint); margin: 6px 0 0; }
 .lineas { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
 .linea { border: 1px solid var(--border); border-radius: 10px; padding: 12px;
   &__top { display: flex; align-items: center; justify-content: space-between;
     strong { font-family: $font-secondary; font-size: 0.82rem; font-weight: 700; }
     button { border: none; background: transparent; color: var(--text-faint); cursor: pointer; font-size: 0.85rem;
       &:hover { color: $alert-error; } } }
-  &__meta { font-family: $font-secondary; font-size: 0.68rem; color: var(--text-faint); }
+  &__meta { font-family: $font-secondary; font-size: 0.68rem; color: var(--text-faint);
+    b { color: darken($secondary, 10%); &.over { color: $alert-error; } } }
   &__inputs { display: flex; align-items: flex-end; gap: 10px; margin-top: 8px;
     label { display: flex; flex-direction: column; gap: 3px; font-family: $font-secondary; font-size: 0.66rem; color: var(--text-faint); flex: 1;
-      input { padding: 7px 9px; border: 1px solid var(--border-strong); border-radius: 7px; font-size: 0.85rem; } }
+      input { padding: 7px 9px; border: 1px solid var(--border-strong); border-radius: 7px; font-size: 0.85rem;
+        &.is-over { border-color: $alert-error; background: $alert-error-bg; } } }
     .linea__sub { font-family: $font-secondary; font-weight: 800; font-size: 0.9rem; min-width: 74px; text-align: right; padding-bottom: 7px; } }
+  &__warn { display: block; margin-top: 6px; font-family: $font-secondary; font-size: 0.68rem; font-weight: 600; color: $alert-error; }
 }
 .err { font-family: $font-secondary; font-size: 0.78rem; color: darken($alert-error, 8%);
   background: $alert-error-bg; border-radius: 8px; padding: 9px 12px; margin: 0 0 12px; }
