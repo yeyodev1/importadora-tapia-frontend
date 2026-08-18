@@ -130,6 +130,16 @@ export interface NuevoPedido {
   observacion?: string
 }
 
+export interface EstadoErp {
+  success: boolean
+  conectado: boolean
+  latenciaMs: number | null
+  motivo: string | null
+  detalle: string | null
+  ultimaSincronizacion: string | null
+  copias: { vista: string; registros: number; actualizado: string }[]
+}
+
 export interface LoginResponse {
   success: boolean
   token: string
