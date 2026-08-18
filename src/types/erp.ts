@@ -130,6 +130,29 @@ export interface NuevoPedido {
   observacion?: string
 }
 
+export type EstadoVisita = 'en_curso' | 'finalizada'
+export type ResultadoVisita = 'atendido' | 'espera' | 'regreso' | 'abandono'
+
+export interface GeoPunto {
+  lat: number
+  lng: number
+  ts: string
+}
+
+export interface Visita {
+  _id: string
+  vendedorNombre: string
+  clienteNombre?: string
+  clienteCodigo?: string
+  entrada: GeoPunto
+  salida?: GeoPunto
+  duracionMin?: number
+  estado: EstadoVisita
+  resultado?: ResultadoVisita
+  observacion?: string
+  createdAt: string
+}
+
 export interface EstadoErp {
   success: boolean
   conectado: boolean
