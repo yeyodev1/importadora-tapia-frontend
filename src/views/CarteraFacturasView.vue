@@ -4,7 +4,7 @@ import { useErpStore } from '@/stores/erp'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import DataTable, { type Column } from '@/components/ui/DataTable.vue'
-import { formatMoney, formatDate } from '@/utils/format'
+import { formatMoney, formatDate, formatNumFactura } from '@/utils/format'
 
 const erp = useErpStore()
 onMounted(() => erp.fetchCarteraFacturas())
@@ -12,9 +12,10 @@ onMounted(() => erp.fetchCarteraFacturas())
 const estado = ref<'todas' | 'VIGENTE' | 'VENCIDO'>('todas')
 
 const rows = computed(() =>
-  estado.value === 'todas'
+  (estado.value === 'todas'
     ? erp.carteraFacturas.data
-    : erp.carteraFacturas.data.filter((f) => f.estado_factura === estado.value),
+    : erp.carteraFacturas.data.filter((f) => f.estado_factura === estado.value)
+  ).map((f) => ({ ...f, numdoc_fmt: formatNumFactura(f.trc_numdoc) })),
 )
 
 const saldoFiltrado = computed(() =>
@@ -69,7 +70,7 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
       :rows="rows"
       :loading="erp.carteraFacturas.loading && !erp.carteraFacturas.fetchedAt"
       :error="erp.carteraFacturas.error"
-      :search-keys="['per_nombre', 'trc_numdoc']"
+      :search-keys="['per_nombre', 'trc_numdoc', 'numdoc_fmt']"
       search-placeholder="Buscar por cliente o número de factura…"
       :page-size="12"
       @retry="erp.fetchCarteraFacturas(true)"
@@ -83,7 +84,7 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
 
       <template #cell-documento="{ row }">
         <!-- Solo trc_numdoc: es el número que Tapia reconoce; trc_serdoc es una serie interna del ERP. -->
-        <code class="doc">{{ row.trc_numdoc }}</code>
+        <code class="doc">{{ formatNumFactura(row.trc_numdoc) }}</code>
       </template>
 
       <template #cell-trc_fecha="{ value }">{{ formatDate(value) }}</template>
@@ -112,7 +113,7 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
             </BaseBadge>
           </div>
           <p class="mcard__doc">
-            <code class="doc">{{ row.trc_numdoc }}</code>
+            <code class="doc">{{ formatNumFactura(row.trc_numdoc) }}</code>
             vence {{ formatDate(row.fecha_vencimiento) }}
           </p>
           <div class="mcard__amounts">

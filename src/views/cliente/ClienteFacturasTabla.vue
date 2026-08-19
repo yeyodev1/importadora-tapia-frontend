@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import DataTable, { type Column } from '@/components/ui/DataTable.vue'
-import { formatMoney, formatDate } from '@/utils/format'
+import { formatMoney, formatDate, formatNumFactura } from '@/utils/format'
 import type { FacturaCartera } from '@/types/erp'
 
 defineProps<{
@@ -33,7 +33,7 @@ const columns: Column[] = [
   >
     <template #cell-documento="{ row }">
       <!-- Solo trc_numdoc: es el número que Tapia reconoce; trc_serdoc es una serie interna del ERP. -->
-      <code class="doc">{{ row.trc_numdoc }}</code>
+      <code class="doc">{{ formatNumFactura(row.trc_numdoc) }}</code>
     </template>
     <template #cell-trc_fecha="{ value }">{{ formatDate(value) }}</template>
     <template #cell-fecha_vencimiento="{ value }">{{ formatDate(value) }}</template>
@@ -50,7 +50,7 @@ const columns: Column[] = [
     <template #mobile-card="{ row }">
       <div class="fmcard">
         <div class="fmcard__head">
-          <code class="doc">{{ row.trc_numdoc }}</code>
+          <code class="doc">{{ formatNumFactura(row.trc_numdoc) }}</code>
           <BaseBadge :tone="row.estado_factura === 'VENCIDO' ? 'danger' : 'success'">
             {{ row.estado_factura === 'VENCIDO' ? 'Vencida' : 'Vigente' }}
           </BaseBadge>

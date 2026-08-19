@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FacturaCartera } from '@/types/erp'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
-import { formatMoney } from '@/utils/format'
+import { formatMoney, formatNumFactura } from '@/utils/format'
 
 defineProps<{
   invoices: FacturaCartera[]
@@ -38,7 +38,7 @@ function shortDate(value: string): string {
         <div>
           <strong>{{ f.per_nombre }}</strong>
           <small>
-            Factura {{ f.trc_numdoc }} · vence {{ shortDate(f.fecha_vencimiento) }}
+            Factura {{ formatNumFactura(f.trc_numdoc) }} · vence {{ shortDate(f.fecha_vencimiento) }}
           </small>
         </div>
         <div class="invoices__right">

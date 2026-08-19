@@ -33,6 +33,15 @@ export function formatDate(value: string | null | undefined): string {
   return d.toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' })
 }
 
+/**
+ * Número de factura como lo imprime el ERP de Tapia: mínimo 4 cifras con
+ * ceros a la izquierda (trc_numdoc es numérico y los pierde): 420 -> "0420".
+ */
+export function formatNumFactura(value: string | number | null | undefined): string {
+  const s = String(value ?? '').trim()
+  return s ? s.padStart(4, '0') : '—'
+}
+
 /** Iniciales para avatares: "LOPEZ CARDENAS VICTOR" -> "LC" */
 export function initials(name: string | null | undefined): string {
   if (!name) return '?'
