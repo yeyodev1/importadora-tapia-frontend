@@ -13,7 +13,7 @@ defineProps<{
 defineEmits<{ retry: [] }>()
 
 const columns: Column[] = [
-  { key: 'documento', label: 'Documento' },
+  { key: 'documento', label: 'N° factura' },
   { key: 'trc_fecha', label: 'Emisión', sortable: true },
   { key: 'fecha_vencimiento', label: 'Vencimiento', sortable: true },
   { key: 'trc_totfact', label: 'Total', align: 'right', sortable: true },
@@ -32,7 +32,8 @@ const columns: Column[] = [
     @retry="$emit('retry')"
   >
     <template #cell-documento="{ row }">
-      <code class="doc">{{ row.trc_serdoc }}-{{ row.trc_numdoc }}</code>
+      <!-- Solo trc_numdoc: es el número que Tapia reconoce; trc_serdoc es una serie interna del ERP. -->
+      <code class="doc">{{ row.trc_numdoc }}</code>
     </template>
     <template #cell-trc_fecha="{ value }">{{ formatDate(value) }}</template>
     <template #cell-fecha_vencimiento="{ value }">{{ formatDate(value) }}</template>
@@ -49,7 +50,7 @@ const columns: Column[] = [
     <template #mobile-card="{ row }">
       <div class="fmcard">
         <div class="fmcard__head">
-          <code class="doc">{{ row.trc_serdoc }}-{{ row.trc_numdoc }}</code>
+          <code class="doc">{{ row.trc_numdoc }}</code>
           <BaseBadge :tone="row.estado_factura === 'VENCIDO' ? 'danger' : 'success'">
             {{ row.estado_factura === 'VENCIDO' ? 'Vencida' : 'Vigente' }}
           </BaseBadge>

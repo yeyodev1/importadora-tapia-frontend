@@ -23,7 +23,7 @@ const saldoFiltrado = computed(() =>
 
 const columns: Column[] = [
   { key: 'per_nombre', label: 'Cliente', sortable: true },
-  { key: 'documento', label: 'Documento' },
+  { key: 'documento', label: 'N° factura' },
   { key: 'trc_fecha', label: 'Emisión', sortable: true },
   { key: 'fecha_vencimiento', label: 'Vencimiento', sortable: true },
   { key: 'trc_totfact', label: 'Total', align: 'right', sortable: true },
@@ -69,8 +69,8 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
       :rows="rows"
       :loading="erp.carteraFacturas.loading && !erp.carteraFacturas.fetchedAt"
       :error="erp.carteraFacturas.error"
-      :search-keys="['per_nombre', 'trc_numdoc', 'trc_serdoc']"
-      search-placeholder="Buscar por cliente o número de documento…"
+      :search-keys="['per_nombre', 'trc_numdoc']"
+      search-placeholder="Buscar por cliente o número de factura…"
       :page-size="12"
       @retry="erp.fetchCarteraFacturas(true)"
     >
@@ -82,7 +82,8 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
       </template>
 
       <template #cell-documento="{ row }">
-        <code class="doc">{{ row.trc_serdoc }}-{{ row.trc_numdoc }}</code>
+        <!-- Solo trc_numdoc: es el número que Tapia reconoce; trc_serdoc es una serie interna del ERP. -->
+        <code class="doc">{{ row.trc_numdoc }}</code>
       </template>
 
       <template #cell-trc_fecha="{ value }">{{ formatDate(value) }}</template>
@@ -111,7 +112,7 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
             </BaseBadge>
           </div>
           <p class="mcard__doc">
-            <code class="doc">{{ row.trc_serdoc }}-{{ row.trc_numdoc }}</code>
+            <code class="doc">{{ row.trc_numdoc }}</code>
             vence {{ formatDate(row.fecha_vencimiento) }}
           </p>
           <div class="mcard__amounts">

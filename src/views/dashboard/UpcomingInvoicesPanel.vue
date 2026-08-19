@@ -38,7 +38,7 @@ function shortDate(value: string): string {
         <div>
           <strong>{{ f.per_nombre }}</strong>
           <small>
-            Doc. {{ f.trc_serdoc }}-{{ f.trc_numdoc }} · vence {{ shortDate(f.fecha_vencimiento) }}
+            Factura {{ f.trc_numdoc }} · vence {{ shortDate(f.fecha_vencimiento) }}
           </small>
         </div>
         <div class="invoices__right">
