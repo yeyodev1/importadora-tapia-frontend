@@ -33,8 +33,11 @@ const columns: Column[] = [
     @retry="$emit('retry')"
   >
     <template #cell-documento="{ row }">
-      <!-- Solo trc_numdoc: es el número que Tapia reconoce; trc_serdoc es una serie interna del ERP. -->
-      <code class="doc">{{ formatNumFactura(row.trc_numdoc) }}</code>
+      <!-- Mismo formato del reporte de Tapia: Número grande, Serie como dato secundario. -->
+      <div class="docwrap">
+        <code class="doc">{{ formatNumFactura(row.trc_numdoc) }}</code>
+        <small class="serie">Serie {{ row.trc_serdoc }}</small>
+      </div>
     </template>
     <template #cell-trc_fecha="{ value }">{{ formatDate(value) }}</template>
     <!-- Sin días de crédito configurados el "vencimiento" del ERP es la misma fecha de emisión: no informar. -->
@@ -79,6 +82,18 @@ const columns: Column[] = [
   background: rgba($primary-dark, 0.05);
   border-radius: 5px;
   padding: 2px 7px;
+}
+
+.docwrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .serie {
+    font-family: $font-secondary;
+    font-size: 0.64rem;
+    color: var(--text-faint);
+  }
 }
 
 .sin-saldo {
