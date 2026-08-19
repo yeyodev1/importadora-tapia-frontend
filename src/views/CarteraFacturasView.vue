@@ -5,16 +5,19 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import DataTable, { type Column } from '@/components/ui/DataTable.vue'
 import { formatMoney, formatDate, formatNumFactura } from '@/utils/format'
+import { esVencida, tienePlazo, estadoCartera, ESTADO_CARTERA_BADGE } from '@/utils/cartera'
 
 const erp = useErpStore()
 onMounted(() => erp.fetchCarteraFacturas())
 
-const estado = ref<'todas' | 'VIGENTE' | 'VENCIDO'>('todas')
+const estado = ref<'todas' | 'sin_vencer' | 'vencidas'>('todas')
 
 const rows = computed(() =>
   (estado.value === 'todas'
     ? erp.carteraFacturas.data
-    : erp.carteraFacturas.data.filter((f) => f.estado_factura === estado.value)
+    : erp.carteraFacturas.data.filter((f) =>
+        estado.value === 'vencidas' ? esVencida(f) : !esVencida(f),
+      )
   ).map((f) => ({ ...f, numdoc_fmt: formatNumFactura(f.trc_numdoc) })),
 )
 
@@ -49,14 +52,14 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
       <template #actions>
         <div class="filters">
           <button
-            v-for="opt in ['todas', 'VIGENTE', 'VENCIDO'] as const"
+            v-for="opt in ['todas', 'sin_vencer', 'vencidas'] as const"
             :key="opt"
             type="button"
             class="filters__btn"
-            :class="{ 'is-active': estado === opt, 'is-danger': opt === 'VENCIDO' }"
+            :class="{ 'is-active': estado === opt, 'is-danger': opt === 'vencidas' }"
             @click="estado = opt"
           >
-            {{ opt === 'todas' ? 'Todas' : opt === 'VIGENTE' ? 'Vigentes' : 'Vencidas' }}
+            {{ opt === 'todas' ? 'Todas' : opt === 'sin_vencer' ? 'Sin vencer' : 'Vencidas' }}
           </button>
           <span class="filters__total">
             Saldo: <strong>{{ formatMoney(saldoFiltrado) }}</strong>
@@ -88,7 +91,10 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
       </template>
 
       <template #cell-trc_fecha="{ value }">{{ formatDate(value) }}</template>
-      <template #cell-fecha_vencimiento="{ value }">{{ formatDate(value) }}</template>
+      <!-- Sin días de crédito configurados el "vencimiento" del ERP es la misma fecha de emisión: no informar. -->
+      <template #cell-fecha_vencimiento="{ row, value }">
+        {{ tienePlazo(row) ? formatDate(value) : '—' }}
+      </template>
       <template #cell-trc_totfact="{ value }">{{ formatMoney(value) }}</template>
       <template #cell-total_abonado="{ value }">{{ formatMoney(value) }}</template>
 
@@ -98,9 +104,9 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
         </strong>
       </template>
 
-      <template #cell-estado_factura="{ value }">
-        <BaseBadge :tone="value === 'VENCIDO' ? 'danger' : 'success'">
-          {{ value === 'VENCIDO' ? 'Vencida' : 'Vigente' }}
+      <template #cell-estado_factura="{ row }">
+        <BaseBadge :tone="ESTADO_CARTERA_BADGE[estadoCartera(row)].tone">
+          {{ ESTADO_CARTERA_BADGE[estadoCartera(row)].label }}
         </BaseBadge>
       </template>
 
@@ -108,13 +114,14 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
         <div class="mcard">
           <div class="mcard__head">
             <strong>{{ row.per_nombre }}</strong>
-            <BaseBadge :tone="row.estado_factura === 'VENCIDO' ? 'danger' : 'success'">
-              {{ row.estado_factura === 'VENCIDO' ? 'Vencida' : 'Vigente' }}
+            <BaseBadge :tone="ESTADO_CARTERA_BADGE[estadoCartera(row)].tone">
+              {{ ESTADO_CARTERA_BADGE[estadoCartera(row)].label }}
             </BaseBadge>
           </div>
           <p class="mcard__doc">
             <code class="doc">{{ formatNumFactura(row.trc_numdoc) }}</code>
-            vence {{ formatDate(row.fecha_vencimiento) }}
+            <template v-if="tienePlazo(row)"> vence {{ formatDate(row.fecha_vencimiento) }}</template>
+            <template v-else> emitida {{ formatDate(row.trc_fecha) }}</template>
           </p>
           <div class="mcard__amounts">
             <span>Total <b>{{ formatMoney(row.trc_totfact) }}</b></span>

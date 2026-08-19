@@ -7,6 +7,7 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import TopDebtorsPanel from './dashboard/TopDebtorsPanel.vue'
 import UpcomingInvoicesPanel from './dashboard/UpcomingInvoicesPanel.vue'
 import { formatMoney } from '@/utils/format'
+import { esVencida } from '@/utils/cartera'
 
 const erp = useErpStore()
 const userStore = useUserStore()
@@ -40,9 +41,7 @@ const deudaTotal = computed(() =>
   erp.carteraConsolidada.data.reduce((sum, r) => sum + Number(r.deuda_total || 0), 0),
 )
 
-const vencidas = computed(() =>
-  erp.carteraFacturas.data.filter((f) => f.estado_factura === 'VENCIDO'),
-)
+const vencidas = computed(() => erp.carteraFacturas.data.filter(esVencida))
 
 const saldoVencido = computed(() =>
   vencidas.value.reduce((sum, f) => sum + Number(f.saldo_pendiente || 0), 0),
@@ -56,7 +55,7 @@ const topDeudores = computed(() =>
 
 const proximasVencer = computed(() =>
   [...erp.carteraFacturas.data]
-    .filter((f) => f.estado_factura !== 'VENCIDO' && Number(f.saldo_pendiente) > 0)
+    .filter((f) => !esVencida(f) && Number(f.saldo_pendiente) > 0)
     .sort((a, b) => a.fecha_vencimiento.localeCompare(b.fecha_vencimiento))
     .slice(0, 6),
 )

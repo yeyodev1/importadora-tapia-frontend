@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import { formatMoney } from '@/utils/format'
+import { esVencida } from '@/utils/cartera'
 import type { FacturaCartera } from '@/types/erp'
 
 const props = defineProps<{
@@ -10,7 +11,7 @@ const props = defineProps<{
 }>()
 
 const abiertas = () => props.facturas.filter((f) => Number(f.saldo_pendiente) > 0)
-const vencidas = () => abiertas().filter((f) => f.estado_factura === 'VENCIDO')
+const vencidas = () => abiertas().filter(esVencida)
 
 function estado(): { tone: 'success' | 'warning' | 'danger'; label: string; detalle: string } {
   const a = abiertas().length

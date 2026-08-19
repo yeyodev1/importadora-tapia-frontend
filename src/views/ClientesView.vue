@@ -5,6 +5,7 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import DataTable, { type Column } from '@/components/ui/DataTable.vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import { initials } from '@/utils/format'
+import { esVencida } from '@/utils/cartera'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import type { Cliente } from '@/types/erp'
@@ -37,7 +38,7 @@ const creditoPorCliente = computed(() => {
     if (Number(f.saldo_pendiente) <= 0) continue
     const info = map.get(f.per_nombre) || { abiertas: 0, vencidas: 0 }
     info.abiertas++
-    if (f.estado_factura === 'VENCIDO') info.vencidas++
+    if (esVencida(f)) info.vencidas++
     map.set(f.per_nombre, info)
   }
   return map

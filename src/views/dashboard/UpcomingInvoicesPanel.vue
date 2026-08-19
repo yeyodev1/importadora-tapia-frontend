@@ -2,6 +2,7 @@
 import type { FacturaCartera } from '@/types/erp'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import { formatMoney, formatNumFactura } from '@/utils/format'
+import { tienePlazo, estadoCartera, ESTADO_CARTERA_BADGE } from '@/utils/cartera'
 
 defineProps<{
   invoices: FacturaCartera[]
@@ -38,12 +39,16 @@ function shortDate(value: string): string {
         <div>
           <strong>{{ f.per_nombre }}</strong>
           <small>
-            Factura {{ formatNumFactura(f.trc_numdoc) }} · vence {{ shortDate(f.fecha_vencimiento) }}
+            Factura {{ formatNumFactura(f.trc_numdoc) }} ·
+            <template v-if="tienePlazo(f)">vence {{ shortDate(f.fecha_vencimiento) }}</template>
+            <template v-else>emitida {{ shortDate(f.trc_fecha) }}</template>
           </small>
         </div>
         <div class="invoices__right">
           <span>{{ formatMoney(f.saldo_pendiente) }}</span>
-          <BaseBadge tone="info">Vigente</BaseBadge>
+          <BaseBadge :tone="ESTADO_CARTERA_BADGE[estadoCartera(f)].tone">
+            {{ ESTADO_CARTERA_BADGE[estadoCartera(f)].label }}
+          </BaseBadge>
         </div>
       </li>
     </ul>
