@@ -34,6 +34,7 @@ const count = computed(() => (erp.vendedores.fetchedAt ? erp.vendedores.data.len
       title="Vendedores"
       subtitle="Equipo comercial y clientes asignados (la asignación se administra en el ERP)"
       source="erp"
+      :updated-at="erp.vendedores.fetchedAt"
       :count="count"
       :refreshing="erp.vendedores.loading && !!erp.vendedores.fetchedAt"
       @refresh="erp.fetchVendedores(true)"

@@ -45,6 +45,7 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
       title="Cartera · Facturas"
       subtitle="Facturas de los últimos 2 años con su saldo"
       source="erp"
+      :updated-at="erp.carteraFacturas.fetchedAt"
       :count="count"
       :refreshing="erp.carteraFacturas.loading && !!erp.carteraFacturas.fetchedAt"
       @refresh="erp.fetchCarteraFacturas(true)"

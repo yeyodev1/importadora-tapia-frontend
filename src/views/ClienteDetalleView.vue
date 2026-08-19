@@ -9,6 +9,7 @@ import ClienteFacturasTabla from './cliente/ClienteFacturasTabla.vue'
 import CobroFormModal from './cobros/CobroFormModal.vue'
 import PedidoFormModal from './pedidos/PedidoFormModal.vue'
 import { initials } from '@/utils/format'
+import SourceTag from '@/components/ui/SourceTag.vue'
 
 /** Tope de facturas abiertas por cliente (política actual; el ERP guarda el real por cliente). */
 const MAX_FACTURAS = 6
@@ -91,7 +92,10 @@ const pedidoOpen = ref(false)
         :max-facturas="MAX_FACTURAS"
       />
 
-      <h2 class="seccion">Facturas (últimos 2 años) <small>{{ facturas.length }}</small></h2>
+      <h2 class="seccion">
+        Facturas (últimos 2 años) <small>{{ facturas.length }}</small>
+        <SourceTag source="erp" :updated-at="erp.carteraFacturas.fetchedAt" />
+      </h2>
 
       <ClienteFacturasTabla
         :facturas="facturas"

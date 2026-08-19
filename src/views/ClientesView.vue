@@ -83,6 +83,7 @@ const count = computed(() => (erp.clientes.fetchedAt ? erp.clientes.data.length 
       title="Clientes"
       subtitle="Cartera de clientes registrada en el ERP"
       source="erp"
+      :updated-at="erp.clientes.fetchedAt"
       :count="count"
       :refreshing="erp.clientes.loading && !!erp.clientes.fetchedAt"
       @refresh="erp.fetchClientes(true)"

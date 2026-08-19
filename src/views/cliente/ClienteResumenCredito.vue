@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BaseBadge from '@/components/ui/BaseBadge.vue'
+import SourceTag from '@/components/ui/SourceTag.vue'
 import { formatMoney } from '@/utils/format'
 import { esVencida } from '@/utils/cartera'
 import type { FacturaCartera } from '@/types/erp'
@@ -47,6 +48,7 @@ const saldoVencido = () => vencidas().reduce((s, f) => s + Number(f.saldo_pendie
     <div class="credito__estado">
       <BaseBadge :tone="estado().tone">{{ estado().label }}</BaseBadge>
       <p>{{ estado().detalle }}</p>
+      <SourceTag source="erp" class="credito__fuente" />
     </div>
 
     <div class="credito__cifras">
@@ -85,6 +87,10 @@ const saldoVencido = () => vencidas().reduce((s, f) => s + Number(f.saldo_pendie
     flex-wrap: wrap;
     padding-bottom: 14px;
     border-bottom: 1px solid var(--border);
+
+    .credito__fuente {
+      margin-left: auto;
+    }
 
     p {
       font-family: $font-secondary;

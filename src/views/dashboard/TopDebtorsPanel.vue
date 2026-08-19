@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CarteraConsolidada } from '@/types/erp'
 import { formatMoney, initials } from '@/utils/format'
+import SourceTag from '@/components/ui/SourceTag.vue'
 
 const props = defineProps<{
   debtors: CarteraConsolidada[]
@@ -13,7 +14,7 @@ const maxDeuda = () => Number(props.debtors[0]?.deuda_total || 1)
 <template>
   <article class="panel">
     <header class="panel__head">
-      <h2>Mayores deudores</h2>
+      <h2>Mayores deudores <SourceTag source="erp" /></h2>
       <RouterLink to="/cartera/consolidada">Ver cartera</RouterLink>
     </header>
 

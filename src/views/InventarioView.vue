@@ -53,6 +53,7 @@ function stockLabel(value: string): string {
       title="Inventario"
       subtitle="Existencias por producto y bodega"
       source="erp"
+      :updated-at="erp.inventario.fetchedAt"
       :count="count"
       :refreshing="erp.inventario.loading && !!erp.inventario.fetchedAt"
       @refresh="erp.fetchInventario(true)"

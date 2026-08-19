@@ -68,6 +68,8 @@ const money = (n: number) => formatMoney(n)
     <PageHeader
       title="Resumen"
       :subtitle="subtitle"
+      source="erp"
+      :updated-at="erp.carteraFacturas.fetchedAt"
       :refreshing="refreshing"
       @refresh="loadAll(true)"
     />

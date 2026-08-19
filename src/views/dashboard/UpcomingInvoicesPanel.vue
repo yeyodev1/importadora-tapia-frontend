@@ -3,6 +3,7 @@ import type { FacturaCartera } from '@/types/erp'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import { formatMoney, formatNumFactura } from '@/utils/format'
 import { tienePlazo, estadoCartera, ESTADO_CARTERA_BADGE } from '@/utils/cartera'
+import SourceTag from '@/components/ui/SourceTag.vue'
 
 defineProps<{
   invoices: FacturaCartera[]
@@ -21,7 +22,7 @@ function shortDate(value: string): string {
 <template>
   <article class="panel">
     <header class="panel__head">
-      <h2>Próximas a vencer</h2>
+      <h2>Próximas a vencer <SourceTag source="erp" /></h2>
       <RouterLink to="/cartera/facturas">Ver facturas</RouterLink>
     </header>
 

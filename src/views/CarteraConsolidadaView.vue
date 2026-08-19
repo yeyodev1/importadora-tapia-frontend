@@ -33,6 +33,7 @@ const count = computed(() =>
       title="Cartera · Consolidada"
       subtitle="Deuda total agrupada por cliente"
       source="erp"
+      :updated-at="erp.carteraConsolidada.fetchedAt"
       :count="count"
       :refreshing="erp.carteraConsolidada.loading && !!erp.carteraConsolidada.fetchedAt"
       @refresh="erp.fetchCarteraConsolidada(true)"

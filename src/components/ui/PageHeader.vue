@@ -9,9 +9,15 @@ withDefaults(
     refreshing?: boolean
     /** 'erp' = dato del sistema de Tapia (solo lectura); 'local' = se gestiona en esta app */
     source?: 'erp' | 'local' | null
+    /** timestamp (ms) de la última lectura de los datos (ej. fetchedAt del store) */
+    updatedAt?: number | null
   }>(),
-  { subtitle: '', count: null, refreshing: false, source: null },
+  { subtitle: '', count: null, refreshing: false, source: null, updatedAt: null },
 )
+
+function horaActualizado(ts: number): string {
+  return new Date(ts).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })
+}
 
 defineEmits<{ refresh: [] }>()
 </script>
@@ -35,7 +41,8 @@ defineEmits<{ refresh: [] }>()
           "
         >
           <i :class="source === 'erp' ? 'fa-solid fa-database' : 'fa-solid fa-pen-to-square'"></i>
-          {{ source === 'erp' ? 'ERP · solo lectura' : 'Se gestiona aquí' }}
+          {{ source === 'erp' ? 'Fuente: ERP Tapia' : 'Registrado en el CRM' }}
+          <template v-if="updatedAt"> · {{ horaActualizado(updatedAt) }}</template>
         </span>
       </h1>
       <p v-if="subtitle" class="page-header__subtitle">{{ subtitle }}</p>
