@@ -8,7 +8,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonTable from '@/components/ui/SkeletonTable.vue'
 import PedidoFormModal from './pedidos/PedidoFormModal.vue'
 import PedidoComprobante from './pedidos/PedidoComprobante.vue'
-import { formatMoney, formatDate, formatQty } from '@/utils/format'
+import { formatMoney, formatDate, formatQty, formatPlazo } from '@/utils/format'
 import type { EstadoPedido, Pedido } from '@/types/erp'
 
 const pedidos = usePedidosStore()
@@ -83,7 +83,7 @@ async function decidir(id: string, estado: 'aprobado' | 'rechazado') {
           <div class="ped__info">
             <strong>{{ p.clienteNombre }} <code class="ped__num">{{ p.numero }}</code></strong>
             <small>
-              {{ p.items.length }} producto{{ p.items.length > 1 ? 's' : '' }} · {{ formatDate(p.createdAt) }}
+              {{ p.items.length }} producto{{ p.items.length > 1 ? 's' : '' }} · {{ formatDate(p.createdAt) }} · {{ formatPlazo(p.plazoCreditoDias) }}
               <template v-if="userStore.isAdmin"> · {{ p.vendedorNombre }}</template>
             </small>
           </div>
