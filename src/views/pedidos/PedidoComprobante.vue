@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { formatMoney, formatQty, formatDate } from '@/utils/format'
+import { formatMoney, formatQty, formatDate, formatPlazo } from '@/utils/format'
 import type { Pedido } from '@/types/erp'
 
 const props = defineProps<{ open: boolean; pedido: Pedido | null }>()
@@ -28,6 +28,7 @@ async function compartir() {
     .join('\n')
   const texto = `IMPORTADORA TAPIA — Comprobante de pedido ${p.numero}
 Cliente: ${p.clienteNombre}
+Plazo de crédito: ${formatPlazo(p.plazoCreditoDias)}
 Fecha: ${formatDate(p.createdAt)}
 
 ${lineas}
@@ -75,6 +76,7 @@ Estado: ${estadoTexto[p.estado]}`
               <div><span>Cliente</span><b>{{ pedido.clienteNombre }}</b></div>
               <div><span>Fecha</span><b>{{ formatDate(pedido.createdAt) }}</b></div>
               <div><span>Vendedor</span><b>{{ pedido.vendedorNombre }}</b></div>
+              <div><span>Plazo de crédito</span><b>{{ formatPlazo(pedido.plazoCreditoDias) }}</b></div>
               <div>
                 <span>Estado</span>
                 <b class="doc__estado" :class="`is-${pedido.estado}`">{{ estadoTexto[pedido.estado] }}</b>
