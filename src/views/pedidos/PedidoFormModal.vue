@@ -48,6 +48,10 @@ async function guardar() {
           <div class="fld">
             <span>Plazo de crédito <em class="req">· obligatorio</em></span>
             <PlazoCreditoPicker v-model="f.plazoCreditoDias.value" />
+            <small v-if="f.conflictoContado.value" class="aviso-contado">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              Este pedido tiene productos que solo se venden al contado: elige "Contado" o quítalos.
+            </small>
           </div>
 
           <div class="fld">
@@ -63,7 +67,7 @@ async function guardar() {
                 :class="{ 'is-agotado': r.disponible <= 0 }"
                 @click="r.disponible > 0 && f.agregar(r)"
               >
-                <span>{{ r.pro_nombre }}</span>
+                <span>{{ r.pro_nombre }} <em v-if="r.solo_contado" class="tag-contado">Solo contado</em></span>
                 <small>
                   {{ r.bod_nombre }} ·
                   <b :class="r.disponible <= 0 ? 'x' : 'ok'">{{ formatQty(r.disponible) }} {{ r.uni_nombre }} disponible</b>
@@ -77,7 +81,7 @@ async function guardar() {
           <div v-if="f.lineas.value.length" class="lineas">
             <div v-for="(l, i) in f.lineas.value" :key="i" class="linea">
               <div class="linea__top">
-                <strong>{{ l.productoNombre }}</strong>
+                <strong>{{ l.productoNombre }} <em v-if="l.soloContado" class="tag-contado">Solo contado</em></strong>
                 <button type="button" @click="f.quitar(i)"><i class="fa-solid fa-trash-can"></i></button>
               </div>
               <small class="linea__meta">
@@ -141,6 +145,15 @@ async function guardar() {
   &__x { border: none; background: transparent; font-size: 1rem; color: var(--text-faint); cursor: pointer; padding: 4px 8px; }
   &__note { margin: 8px 0 16px; font-family: $font-secondary; font-size: 0.76rem; color: var(--text-soft);
     background: rgba($primary, 0.06); border: 1px solid rgba($primary, 0.14); border-radius: 9px; padding: 10px 12px; }
+}
+.tag-contado {
+  display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+  background: rgba($secondary, 0.14); color: darken($secondary, 12%);
+  font-family: $font-secondary; font-size: 0.64rem; font-weight: 700; font-style: normal; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.aviso-contado {
+  display: flex; align-items: center; gap: 6px; margin-top: 4px; padding: 8px 10px; border-radius: 8px;
+  background: $alert-error-bg; color: darken($alert-error, 8%); font-family: $font-secondary; font-size: 0.74rem; font-weight: 600;
 }
 .fld { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px;
   span { font-family: $font-secondary; font-size: 0.74rem; font-weight: 600; color: var(--text-soft);
