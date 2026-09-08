@@ -61,7 +61,7 @@ const saldoVencido = () => vencidas().reduce((s, f) => s + Number(f.saldo_pendie
         <b :class="{ 'is-danger': saldoVencido() > 0 }">{{ formatMoney(saldoVencido()) }}</b>
       </div>
       <div class="cifra">
-        <span>Facturado (2 años)</span>
+        <span>Facturado pendiente</span>
         <b>{{ formatMoney(totalFacturado()) }}</b>
       </div>
       <div class="cifra">
