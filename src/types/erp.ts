@@ -16,12 +16,20 @@ export interface Vendedor {
 
 export type EstadoFactura = 'VIGENTE' | 'VENCIDO' | string
 
+/** in_trancab.trc_tipdoc: 1 = Factura ventas, 4 = Nota de Crédito ventas. */
+export type TipoDocumentoErp = '1' | '4' | string
+
 export interface FacturaCartera {
   per_nombre: string
   per_diascredito: number
   trc_codigo: string
+  /** Tipo de documento del ERP (desde la vista del 24-ago-2026). */
+  trc_tipdoc?: TipoDocumentoErp
+  descripcion_tipdoc?: string
   trc_serdoc: string
   trc_numdoc: string
+  /** "301999-6075": serie y número como los imprime el sistema de Tapia. */
+  numero_factura_impreso?: string
   trc_totfact: string
   trc_fecha: string
   fecha_vencimiento: string
