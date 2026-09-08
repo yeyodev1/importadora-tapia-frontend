@@ -34,12 +34,12 @@ export function formatDate(value: string | null | undefined): string {
 }
 
 /**
- * Número de factura como lo imprime el ERP de Tapia: mínimo 4 cifras con
- * ceros a la izquierda (trc_numdoc es numérico y los pierde): 420 -> "0420".
+ * Número de factura como lo imprime el sistema de Tapia (reporte "Cuentas por
+ * cobrar"): el número tal cual, sin ceros a la izquierda (7892, 6075, 12497).
  */
 export function formatNumFactura(value: string | number | null | undefined): string {
   const s = String(value ?? '').trim()
-  return s ? s.padStart(4, '0') : '—'
+  return s || '—'
 }
 
 /** Iniciales para avatares: "LOPEZ CARDENAS VICTOR" -> "LC" */
