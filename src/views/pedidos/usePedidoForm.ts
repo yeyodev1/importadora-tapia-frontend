@@ -13,6 +13,8 @@ export interface Linea {
   disponible: number
   cantidad: number
   precioUnitario: number
+  /** Regla del admin: este producto sólo se vende al contado. */
+  soloContado: boolean
 }
 
 /** Estado y reglas del formulario de pedido (el modal sólo pinta). */
@@ -74,6 +76,7 @@ export function usePedidoForm() {
         disponible: item.disponible,
         cantidad: 1,
         precioUnitario: 0,
+        soloContado: Boolean(item.solo_contado),
       })
     }
     buscar.value = ''
@@ -84,6 +87,12 @@ export function usePedidoForm() {
   }
 
   const total = computed(() => lineas.value.reduce((s, l) => s + l.cantidad * l.precioUnitario, 0))
+
+  /** Productos del pedido que sólo se venden al contado (obligan plazo = Contado). */
+  const soloContado = computed(() => lineas.value.filter((l) => l.soloContado))
+  const conflictoContado = computed(
+    () => soloContado.value.length > 0 && plazoCreditoDias.value !== null && plazoCreditoDias.value > 0,
+  )
 
   /** Devuelve true si el pedido quedó enviado. */
   async function guardar(): Promise<boolean> {
@@ -99,6 +108,10 @@ export function usePedidoForm() {
     }
     if (!lineas.value.length) {
       error.value = 'Agrega al menos un producto.'
+      return false
+    }
+    if (conflictoContado.value) {
+      error.value = `Solo se vende al contado: ${soloContado.value.map((l) => l.productoNombre).join(', ')}. Cambia el plazo a "Contado" o quita ese producto.`
       return false
     }
     const sobreStock = lineas.value.find((l) => l.cantidad > l.disponible)
@@ -134,6 +147,6 @@ export function usePedidoForm() {
 
   return {
     cliente, observacion, plazoCreditoDias, lineas, buscar, foto, saving, error, cargandoInv,
-    resultados, total, reset, agregar, quitar, guardar,
+    resultados, total, soloContado, conflictoContado, reset, agregar, quitar, guardar,
   }
 }
