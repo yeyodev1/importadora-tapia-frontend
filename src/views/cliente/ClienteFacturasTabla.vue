@@ -2,7 +2,7 @@
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import DataTable, { type Column } from '@/components/ui/DataTable.vue'
 import { formatMoney, formatDate, formatNumFactura } from '@/utils/format'
-import { tienePlazo, estadoCartera, ESTADO_CARTERA_BADGE } from '@/utils/cartera'
+import { tienePlazo, estadoCartera, estaPagada, etiquetaEstado, haceDias, ESTADO_CARTERA_BADGE } from '@/utils/cartera'
 import type { FacturaCartera } from '@/types/erp'
 
 defineProps<{
@@ -16,7 +16,7 @@ defineEmits<{ retry: [] }>()
 const columns: Column[] = [
   { key: 'documento', label: 'N° factura' },
   { key: 'trc_fecha', label: 'Emisión', sortable: true },
-  { key: 'fecha_vencimiento', label: 'Vencimiento', sortable: true },
+  { key: 'fecha_vencimiento', label: 'Antigüedad', sortable: true },
   { key: 'trc_totfact', label: 'Total', align: 'right', sortable: true },
   { key: 'saldo_pendiente', label: 'Saldo', align: 'right', sortable: true },
   { key: 'estado_factura', label: 'Estado', align: 'center' },
@@ -40,9 +40,11 @@ const columns: Column[] = [
       </div>
     </template>
     <template #cell-trc_fecha="{ value }">{{ formatDate(value) }}</template>
-    <!-- Sin días de crédito configurados el "vencimiento" del ERP es la misma fecha de emisión: no informar. -->
+    <!-- Sin días de crédito el "vencimiento" del ERP es la misma emisión: se muestra la antigüedad. -->
     <template #cell-fecha_vencimiento="{ row, value }">
-      {{ tienePlazo(row) ? formatDate(value) : '—' }}
+      <span v-if="estaPagada(row)" class="faint">—</span>
+      <template v-else-if="tienePlazo(row)">vence {{ formatDate(value) }}</template>
+      <template v-else>{{ haceDias(row.trc_fecha) }}</template>
     </template>
     <template #cell-trc_totfact="{ value }">{{ formatMoney(value) }}</template>
     <template #cell-saldo_pendiente="{ value }">
@@ -50,7 +52,7 @@ const columns: Column[] = [
     </template>
     <template #cell-estado_factura="{ row }">
       <BaseBadge :tone="ESTADO_CARTERA_BADGE[estadoCartera(row)].tone">
-        {{ ESTADO_CARTERA_BADGE[estadoCartera(row)].label }}
+        {{ etiquetaEstado(row) }}
       </BaseBadge>
     </template>
 
@@ -59,12 +61,12 @@ const columns: Column[] = [
         <div class="fmcard__head">
           <code class="doc">{{ formatNumFactura(row.trc_numdoc) }}</code>
           <BaseBadge :tone="ESTADO_CARTERA_BADGE[estadoCartera(row)].tone">
-            {{ ESTADO_CARTERA_BADGE[estadoCartera(row)].label }}
+            {{ etiquetaEstado(row) }}
           </BaseBadge>
         </div>
         <p>
-          <template v-if="tienePlazo(row)">Vence {{ formatDate(row.fecha_vencimiento) }}</template>
-          <template v-else>Emitida {{ formatDate(row.trc_fecha) }}</template>
+          Emitida {{ formatDate(row.trc_fecha) }}
+          <template v-if="tienePlazo(row) && !estaPagada(row)"> · vence {{ formatDate(row.fecha_vencimiento) }}</template>
           · Total {{ formatMoney(row.trc_totfact) }}
         </p>
         <b>Saldo {{ formatMoney(row.saldo_pendiente) }}</b>
@@ -94,6 +96,10 @@ const columns: Column[] = [
     font-size: 0.64rem;
     color: var(--text-faint);
   }
+}
+
+.faint {
+  color: var(--text-faint);
 }
 
 .sin-saldo {
