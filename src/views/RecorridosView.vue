@@ -6,6 +6,7 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import RouteMap from '@/components/ui/RouteMap.vue'
+import BaseSelect from '@/components/ui/BaseSelect.vue'
 
 const visitas = useVisitasStore()
 const userStore = useUserStore()
@@ -21,6 +22,11 @@ const vendedores = computed(() => {
   const set = new Set(visitas.data.map((v) => v.vendedorNombre))
   return [...set].sort()
 })
+
+const opcionesVendedor = computed(() => [
+  { value: 'todos', label: 'Todos los vendedores' },
+  ...vendedores.value.map((v) => ({ value: v, label: v })),
+])
 
 /** Visitas del día seleccionado (y vendedor, si admin), ordenadas por hora. */
 const delDia = computed(() => {
@@ -85,10 +91,7 @@ const resultadoLabel: Record<string, string> = {
     >
       <template #actions>
         <input v-model="fecha" type="date" class="filtro" :max="hoy" />
-        <select v-if="userStore.isAdmin" v-model="vendedor" class="filtro">
-          <option value="todos">Todos los vendedores</option>
-          <option v-for="v in vendedores" :key="v" :value="v">{{ v }}</option>
-        </select>
+        <BaseSelect v-if="userStore.isAdmin" v-model="vendedor" :options="opcionesVendedor" aria-label="Filtrar por vendedor" />
       </template>
     </PageHeader>
 
