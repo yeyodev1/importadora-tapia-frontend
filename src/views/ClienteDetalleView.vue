@@ -93,7 +93,7 @@ const pedidoOpen = ref(false)
       />
 
       <h2 class="seccion">
-        Facturas (últimos 2 años) <small>{{ facturas.length }}</small>
+        Facturas con saldo pendiente <small>{{ facturas.length }}</small>
         <SourceTag source="erp" :updated-at="erp.carteraFacturas.fetchedAt" />
       </h2>
 
