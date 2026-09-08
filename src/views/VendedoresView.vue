@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useErpStore } from '@/stores/erp'
 import { useUsersStore } from '@/stores/users'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import { initials, formatInt } from '@/utils/format'
+import { erpService } from '@/services/erp.service'
+import InventarioAsignacionModal from './vendedores/InventarioAsignacionModal.vue'
+import type { Vendedor, AsignacionInventario } from '@/types/erp'
 
 const erp = useErpStore()
 const usersStore = useUsersStore()
@@ -15,7 +18,31 @@ onMounted(() => {
   erp.fetchClientes()
   usersStore.fetch()
   usersStore.fetchOcultos()
+  cargarAsignaciones()
 })
+
+/** Inventario asignado por vendedor (opcional; sin registro ve todo). */
+const asignaciones = ref<Record<string, AsignacionInventario>>({})
+const invVendedor = ref<Vendedor | null>(null)
+
+async function cargarAsignaciones() {
+  try {
+    const list = await erpService.getAsignacionesInventario()
+    asignaciones.value = Object.fromEntries(list.map((a) => [a.venCodigo, a]))
+  } catch {
+    asignaciones.value = {}
+  }
+}
+
+function resumenInventario(venCodigo: string): string {
+  const a = asignaciones.value[venCodigo]
+  if (!a?.restringido) return 'Ve todo el inventario'
+  return `Inventario limitado: ${a.productos.length} producto${a.productos.length === 1 ? '' : 's'}`
+}
+
+function onAsignacionGuardada(a: AsignacionInventario) {
+  asignaciones.value = { ...asignaciones.value, [a.venCodigo]: a }
+}
 
 /** Los vendedores ocultos (ya no trabajan con Tapia) no se listan. */
 const vendedoresVisibles = computed(() =>
@@ -86,12 +113,49 @@ const count = computed(() => (erp.vendedores.fetchedAt ? vendedoresVisibles.valu
           <strong>{{ formatInt(clientesPorVendedor.get(v.ven_codigo) || 0) }}</strong>
           clientes asignados
         </p>
+        <button type="button" class="card__inv" :class="{ 'is-limitado': asignaciones[v.ven_codigo]?.restringido }" @click="invVendedor = v">
+          <i class="fa-solid" :class="asignaciones[v.ven_codigo]?.restringido ? 'fa-filter' : 'fa-boxes-stacked'"></i>
+          {{ resumenInventario(v.ven_codigo) }}
+          <small>Cambiar</small>
+        </button>
       </article>
     </div>
+
+    <InventarioAsignacionModal
+      :open="!!invVendedor"
+      :vendedor="invVendedor"
+      :actual="invVendedor ? asignaciones[invVendedor.ven_codigo] || null : null"
+      @close="invVendedor = null"
+      @saved="onAsignacionGuardada"
+    />
   </div>
 </template>
 
 <style lang="scss" scoped>
+.card__inv {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--surface);
+  font-family: $font-secondary;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+
+  i { color: var(--text-faint); }
+  small { margin-left: auto; color: $primary; font-weight: 700; }
+  &:hover { border-color: $primary; color: var(--text); }
+  &.is-limitado { border-color: rgba($primary, 0.5); background: var(--accent-soft); color: var(--text); i { color: $primary; } }
+}
+
 .link-equipo {
   font-family: $font-secondary;
   font-size: 0.78rem;
