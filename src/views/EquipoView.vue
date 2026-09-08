@@ -6,6 +6,8 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import UserFormModal from './equipo/UserFormModal.vue'
 import UserCard from './equipo/UserCard.vue'
+import VendedoresSinCuenta from './equipo/VendedoresSinCuenta.vue'
+import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import type { AppUser } from '@/types/erp'
 import type { ApiError } from '@/types'
 
@@ -16,13 +18,17 @@ onMounted(() => usersStore.fetch())
 
 const modalOpen = ref(false)
 const editing = ref<AppUser | null>(null)
+const presetVenCodigo = ref<string | null>(null)
 const deleteError = ref('')
+const aEliminar = ref<AppUser | null>(null)
+const eliminando = ref(false)
 
 const admins = computed(() => usersStore.data.filter((u) => u.role === 'admin'))
 const vendedores = computed(() => usersStore.data.filter((u) => u.role === 'vendedor'))
 
-function openCreate() {
+function openCreate(venCodigo: string | null = null) {
   editing.value = null
+  presetVenCodigo.value = venCodigo
   modalOpen.value = true
 }
 
@@ -31,13 +37,22 @@ function openEdit(user: AppUser) {
   modalOpen.value = true
 }
 
-async function removeUser(user: AppUser) {
+function pedirEliminar(user: AppUser) {
   deleteError.value = ''
-  if (!window.confirm(`¿Eliminar la cuenta de ${user.name}? Perderá el acceso a la app.`)) return
+  aEliminar.value = user
+}
+
+/** Se ejecuta recién tras la doble confirmación del modal. */
+async function eliminarConfirmado() {
+  if (!aEliminar.value) return
+  eliminando.value = true
   try {
-    await usersStore.remove(user.id)
+    await usersStore.remove(aEliminar.value.id)
+    aEliminar.value = null
   } catch (err) {
     deleteError.value = (err as ApiError)?.message || 'No se pudo eliminar'
+  } finally {
+    eliminando.value = false
   }
 }
 </script>
@@ -45,15 +60,17 @@ async function removeUser(user: AppUser) {
 <template>
   <div>
     <PageHeader
-      title="Equipo"
-      subtitle="Cuentas de acceso a la app: quién entra y con qué rol"
+      title="Usuarios y accesos"
+      subtitle="Quién puede entrar a la app y con qué rol"
       source="local"
       :count="usersStore.fetchedAt ? usersStore.data.length : null"
       :refreshing="usersStore.loading && !!usersStore.fetchedAt"
       @refresh="usersStore.fetch(true)"
     >
       <template #actions>
-        <button class="new-btn" type="button" @click="openCreate">+ Nueva cuenta</button>
+        <button class="new-btn" type="button" @click="openCreate()">
+          <i class="fa-solid fa-user-plus"></i> Nueva cuenta
+        </button>
       </template>
     </PageHeader>
 
@@ -62,6 +79,8 @@ async function removeUser(user: AppUser) {
       la asignación de sus clientes vienen del <b>ERP de Tapia (solo lectura)</b>: para cambiar
       clientes de un vendedor se hace en ese sistema, no aquí.
     </p>
+
+    <VendedoresSinCuenta v-if="usersStore.fetchedAt" @crear="openCreate" />
 
     <p v-if="deleteError" class="delete-error" role="alert">{{ deleteError }}</p>
 
@@ -97,19 +116,38 @@ async function removeUser(user: AppUser) {
             :user="u"
             :can-delete="u.id !== sessionStore.id"
             @edit="openEdit(u)"
-            @remove="removeUser(u)"
+            @remove="pedirEliminar(u)"
           />
         </div>
       </section>
     </template>
 
-    <UserFormModal :open="modalOpen" :user="editing" @close="modalOpen = false" />
+    <UserFormModal :open="modalOpen" :user="editing" :preset-ven-codigo="presetVenCodigo" @close="modalOpen = false" />
+
+    <ConfirmModal
+      :open="!!aEliminar"
+      danger
+      title="Eliminar cuenta de acceso"
+      :subject="aEliminar ? `${aEliminar.name} · ${aEliminar.email}` : ''"
+      message="La persona dejará de poder entrar a la app de inmediato. Sus pedidos, cobros y visitas registrados se conservan."
+      confirm-label="Sí, eliminar"
+      second-message="Esta acción no se puede deshacer. Si necesita volver a entrar habrá que crearle una cuenta nueva."
+      second-label="Eliminar definitivamente"
+      :loading="eliminando"
+      :error="deleteError"
+      @cancel="aEliminar = null"
+      @confirm="eliminarConfirmado"
+    />
   </div>
 </template>
 
 <style lang="scss" scoped>
 .new-btn {
-  padding: 9px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
   border: none;
   border-radius: 8px;
   background: $primary;
@@ -174,9 +212,16 @@ async function removeUser(user: AppUser) {
 }
 
 .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 14px;
+
+  > * {
+    flex: 1 1 100%;
+    min-width: 0;
+    @media (min-width: 640px) { flex: 1 1 calc(50% - 14px); }
+    @media (min-width: 1100px) { flex: 1 1 calc(33.333% - 14px); max-width: calc(33.333% - 10px); }
+  }
 }
 
 .card--skeleton {
