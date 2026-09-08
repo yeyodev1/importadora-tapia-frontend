@@ -1,135 +1,27 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { usePedidosStore } from '@/stores/pedidos'
-import { erpService } from '@/services/erp.service'
+import { watch } from 'vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import PhotoUpload from '@/components/ui/PhotoUpload.vue'
+import PlazoCreditoPicker from './PlazoCreditoPicker.vue'
+import { usePedidoForm } from './usePedidoForm'
 import { formatMoney, formatQty } from '@/utils/format'
-import type { InventarioDisponible } from '@/types/erp'
-import type { ApiError } from '@/types'
-
-interface Linea {
-  productoCodigo: string
-  productoNombre: string
-  unidad?: string
-  bodega?: string
-  disponible: number
-  cantidad: number
-  precioUnitario: number
-}
 
 const props = defineProps<{ open: boolean; clienteNombre?: string; clienteCodigo?: string }>()
 const emit = defineEmits<{ close: []; saved: [] }>()
 
-const pedidos = usePedidosStore()
-
-const cliente = ref('')
-const observacion = ref('')
-const lineas = ref<Linea[]>([])
-const buscar = ref('')
-const foto = ref('')
-const saving = ref(false)
-const error = ref('')
-const inventario = ref<InventarioDisponible[]>([])
-const cargandoInv = ref(false)
-
-async function cargarInventario() {
-  cargandoInv.value = true
-  try {
-    inventario.value = await erpService.getInventarioDisponible()
-  } catch {
-    inventario.value = []
-  } finally {
-    cargandoInv.value = false
-  }
-}
+const f = usePedidoForm()
 
 watch(
   () => props.open,
   (o) => {
-    if (!o) return
-    cargarInventario()
-    error.value = ''
-    cliente.value = props.clienteNombre || ''
-    observacion.value = ''
-    lineas.value = []
-    buscar.value = ''
-    foto.value = ''
+    if (o) f.reset(props.clienteNombre || '', props.clienteCodigo)
   },
 )
 
-const resultados = computed(() => {
-  const q = buscar.value.trim().toLowerCase()
-  if (!q) return []
-  return inventario.value
-    .filter((i) => i.pro_nombre.toLowerCase().includes(q))
-    .slice(0, 6)
-})
-
-function agregar(item: InventarioDisponible) {
-  const ya = lineas.value.find((l) => l.productoCodigo === item.pro_codigo && l.bodega === item.bod_nombre)
-  if (ya) {
-    if (ya.cantidad < ya.disponible) ya.cantidad += 1
-  } else {
-    lineas.value.push({
-      productoCodigo: item.pro_codigo,
-      productoNombre: item.pro_nombre,
-      unidad: item.uni_nombre,
-      bodega: item.bod_nombre,
-      disponible: item.disponible,
-      cantidad: 1,
-      precioUnitario: 0,
-    })
-  }
-  buscar.value = ''
-}
-
-function quitar(i: number) {
-  lineas.value.splice(i, 1)
-}
-
-const total = computed(() =>
-  lineas.value.reduce((s, l) => s + l.cantidad * l.precioUnitario, 0),
-)
-
 async function guardar() {
-  if (saving.value) return
-  error.value = ''
-  if (!cliente.value) {
-    error.value = 'Indica el cliente.'
-    return
-  }
-  if (!lineas.value.length) {
-    error.value = 'Agrega al menos un producto.'
-    return
-  }
-  const sobreStock = lineas.value.find((l) => l.cantidad > l.disponible)
-  if (sobreStock) {
-    error.value = `${sobreStock.productoNombre}: pediste ${sobreStock.cantidad} pero solo hay ${formatQty(sobreStock.disponible)} disponible.`
-    return
-  }
-  saving.value = true
-  try {
-    await pedidos.create({
-      clienteNombre: cliente.value,
-      clienteCodigo: props.clienteCodigo,
-      items: lineas.value.map((l) => ({
-        productoCodigo: l.productoCodigo,
-        productoNombre: l.productoNombre,
-        unidad: l.unidad,
-        bodega: l.bodega,
-        cantidad: l.cantidad,
-        precioUnitario: l.precioUnitario,
-      })),
-      foto: foto.value || undefined,
-      observacion: observacion.value || undefined,
-    })
+  if (await f.guardar()) {
     emit('saved')
     emit('close')
-  } catch (err) {
-    error.value = (err as ApiError)?.message || 'No se pudo enviar el pedido'
-  } finally {
-    saving.value = false
   }
 }
 </script>
@@ -150,21 +42,26 @@ async function guardar() {
 
           <label class="fld">
             <span>Cliente</span>
-            <input v-model="cliente" type="text" placeholder="Nombre del cliente" />
+            <input v-model="f.cliente.value" type="text" placeholder="Nombre del cliente" />
           </label>
+
+          <div class="fld">
+            <span>Plazo de crédito <em class="req">· obligatorio</em></span>
+            <PlazoCreditoPicker v-model="f.plazoCreditoDias.value" />
+          </div>
 
           <div class="fld">
             <span>Agregar producto</span>
             <div class="search">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input v-model="buscar" type="search" placeholder="Buscar en el inventario…" />
+              <input v-model="f.buscar.value" type="search" placeholder="Buscar en el inventario…" />
             </div>
-            <ul v-if="resultados.length" class="results">
+            <ul v-if="f.resultados.value.length" class="results">
               <li
-                v-for="r in resultados"
+                v-for="r in f.resultados.value"
                 :key="r.pro_codigo + r.bod_nombre"
                 :class="{ 'is-agotado': r.disponible <= 0 }"
-                @click="r.disponible > 0 && agregar(r)"
+                @click="r.disponible > 0 && f.agregar(r)"
               >
                 <span>{{ r.pro_nombre }}</span>
                 <small>
@@ -174,14 +71,14 @@ async function guardar() {
                 </small>
               </li>
             </ul>
-            <p v-if="cargandoInv" class="hint-inv">Cargando disponibilidad…</p>
+            <p v-if="f.cargandoInv.value" class="hint-inv">Cargando disponibilidad…</p>
           </div>
 
-          <div v-if="lineas.length" class="lineas">
-            <div v-for="(l, i) in lineas" :key="i" class="linea">
+          <div v-if="f.lineas.value.length" class="lineas">
+            <div v-for="(l, i) in f.lineas.value" :key="i" class="linea">
               <div class="linea__top">
                 <strong>{{ l.productoNombre }}</strong>
-                <button type="button" @click="quitar(i)"><i class="fa-solid fa-trash-can"></i></button>
+                <button type="button" @click="f.quitar(i)"><i class="fa-solid fa-trash-can"></i></button>
               </div>
               <small class="linea__meta">
                 {{ l.bodega }} · <b :class="{ over: l.cantidad > l.disponible }">{{ formatQty(l.disponible) }} {{ l.unidad }} disponible</b>
@@ -202,22 +99,22 @@ async function guardar() {
 
           <div class="fld">
             <span>Foto (opcional) <em class="opt">· local, nota manuscrita, etc.</em></span>
-            <PhotoUpload v-model="foto" label="Adjuntar foto del pedido" />
+            <PhotoUpload v-model="f.foto.value" label="Adjuntar foto del pedido" />
           </div>
 
           <label class="fld">
             <span>Observación (opcional)</span>
-            <textarea v-model="observacion" rows="2" placeholder="Notas del pedido"></textarea>
+            <textarea v-model="f.observacion.value" rows="2" placeholder="Notas del pedido"></textarea>
           </label>
 
-          <p v-if="error" class="err" role="alert">{{ error }}</p>
+          <p v-if="f.error.value" class="err" role="alert">{{ f.error.value }}</p>
 
           <div class="footer">
-            <div class="footer__total">Total <b>{{ formatMoney(total) }}</b></div>
+            <div class="footer__total">Total <b>{{ formatMoney(f.total.value) }}</b></div>
             <div class="footer__btns">
               <button type="button" class="ghost" @click="emit('close')">Cancelar</button>
-              <button type="button" class="primary" :disabled="saving" @click="guardar">
-                <BaseSpinner v-if="saving" :size="14" light />
+              <button type="button" class="primary" :disabled="f.saving.value" @click="guardar">
+                <BaseSpinner v-if="f.saving.value" :size="14" light />
                 Enviar pedido
               </button>
             </div>
@@ -230,9 +127,9 @@ async function guardar() {
 
 <style lang="scss" scoped>
 .backdrop {
-  position: fixed; inset: 0; z-index: 100; display: grid; place-items: end center;
+  position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-end; justify-content: center;
   background: rgba($primary-dark, 0.5); backdrop-filter: blur(3px);
-  @media (min-width: 641px) { place-items: center; padding: 16px; }
+  @media (min-width: 641px) { align-items: center; padding: 16px; }
 }
 .sheet {
   width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto;
@@ -247,7 +144,13 @@ async function guardar() {
 }
 .fld { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px;
   span { font-family: $font-secondary; font-size: 0.74rem; font-weight: 600; color: var(--text-soft);
-    .opt { font-weight: 400; color: var(--text-faint); } }
+    .req {
+  font-style: normal;
+  font-weight: 700;
+  color: $alert-error;
+}
+
+.opt { font-weight: 400; color: var(--text-faint); } }
   input, textarea { padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 9px;
     font-family: $font-secondary; font-size: 0.88rem; color: var(--text); background: var(--surface);
     &:focus { outline: none; border-color: $primary; box-shadow: 0 0 0 3px rgba($primary, 0.12); } }
