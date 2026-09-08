@@ -12,7 +12,6 @@ const OPCIONES: { dias: number; label: string }[] = [
   { dias: 30, label: '30 días' },
   { dias: 45, label: '45 días' },
   { dias: 60, label: '60 días' },
-  { dias: 90, label: '90 días' },
 ]
 </script>
 
