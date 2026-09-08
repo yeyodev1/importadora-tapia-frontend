@@ -7,6 +7,7 @@ const props = defineProps<{ open: boolean; pedido: Pedido | null }>()
 const emit = defineEmits<{ close: [] }>()
 
 const sharing = ref(false)
+const copiado = ref(false)
 
 const estadoTexto: Record<string, string> = {
   enviado: 'Pendiente de aprobación',
@@ -39,7 +40,8 @@ Estado: ${estadoTexto[p.estado]}`
       await navigator.share({ title: `Pedido ${p.numero}`, text: texto })
     } else {
       await navigator.clipboard.writeText(texto)
-      window.alert('Comprobante copiado al portapapeles.')
+      copiado.value = true
+      window.setTimeout(() => (copiado.value = false), 2500)
     }
   } catch {
     /* usuario canceló */
@@ -115,7 +117,8 @@ Estado: ${estadoTexto[p.estado]}`
               <i class="fa-solid fa-print"></i> Imprimir / PDF
             </button>
             <button type="button" class="primary" :disabled="sharing" @click="compartir">
-              <i class="fa-solid fa-share-nodes"></i> Compartir
+              <i class="fa-solid" :class="copiado ? 'fa-check' : 'fa-share-nodes'"></i>
+              {{ copiado ? 'Copiado al portapapeles' : 'Compartir' }}
             </button>
           </div>
         </div>
