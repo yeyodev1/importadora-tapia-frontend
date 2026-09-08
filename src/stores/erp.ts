@@ -8,6 +8,7 @@ import type {
   InventarioItem,
 } from '@/types/erp'
 import type { ApiError } from '@/types'
+import { esFacturaVenta } from '@/utils/cartera'
 
 interface ResourceState<T> {
   data: T[]
@@ -65,7 +66,11 @@ export const useErpStore = defineStore('erp', {
       return this.fetchResource('inventario', () => erpService.getInventario(), force)
     },
     fetchCarteraFacturas(force = false) {
-      return this.fetchResource('carteraFacturas', () => erpService.getCarteraFacturas(), force)
+      return this.fetchResource(
+        'carteraFacturas',
+        async () => (await erpService.getCarteraFacturas()).filter(esFacturaVenta),
+        force,
+      )
     },
     fetchCarteraConsolidada(force = false) {
       return this.fetchResource('carteraConsolidada', () => erpService.getCarteraConsolidada(), force)
