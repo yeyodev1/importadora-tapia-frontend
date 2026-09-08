@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { FacturaCartera } from '@/types/erp'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
-import { formatMoney, formatNumFactura } from '@/utils/format'
-import { tienePlazo, estadoCartera, ESTADO_CARTERA_BADGE } from '@/utils/cartera'
+import { formatMoney, formatNumFactura, formatDate } from '@/utils/format'
+import { tienePlazo, estadoCartera, etiquetaEstado, haceDias, ESTADO_CARTERA_BADGE } from '@/utils/cartera'
 import SourceTag from '@/components/ui/SourceTag.vue'
 
 defineProps<{
@@ -10,19 +10,12 @@ defineProps<{
   loading: boolean
 }>()
 
-function shortDate(value: string): string {
-  return new Date(value).toLocaleDateString('es-EC', {
-    day: '2-digit',
-    month: 'short',
-    timeZone: 'UTC',
-  })
-}
 </script>
 
 <template>
   <article class="panel">
     <header class="panel__head">
-      <h2>Próximas a vencer <SourceTag source="erp" /></h2>
+      <h2>Por cobrar más antiguas <SourceTag source="erp" /></h2>
       <RouterLink to="/cartera/facturas">Ver facturas</RouterLink>
     </header>
 
@@ -40,21 +33,20 @@ function shortDate(value: string): string {
         <div>
           <strong>{{ f.per_nombre }}</strong>
           <small>
-            Factura {{ formatNumFactura(f.trc_numdoc) }} ·
-            <template v-if="tienePlazo(f)">vence {{ shortDate(f.fecha_vencimiento) }}</template>
-            <template v-else>emitida {{ shortDate(f.trc_fecha) }}</template>
+            Factura {{ formatNumFactura(f.trc_numdoc) }} · emitida {{ formatDate(f.trc_fecha) }} ({{ haceDias(f.trc_fecha) }})
+            <template v-if="tienePlazo(f)"> · vence {{ formatDate(f.fecha_vencimiento) }}</template>
           </small>
         </div>
         <div class="invoices__right">
           <span>{{ formatMoney(f.saldo_pendiente) }}</span>
           <BaseBadge :tone="ESTADO_CARTERA_BADGE[estadoCartera(f)].tone">
-            {{ ESTADO_CARTERA_BADGE[estadoCartera(f)].label }}
+            {{ etiquetaEstado(f) }}
           </BaseBadge>
         </div>
       </li>
     </ul>
 
-    <p v-else class="panel__empty">No hay facturas vigentes con saldo pendiente.</p>
+    <p v-else class="panel__empty">No hay facturas con saldo pendiente.</p>
   </article>
 </template>
 
