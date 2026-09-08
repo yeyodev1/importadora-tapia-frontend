@@ -43,7 +43,7 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
   <div>
     <PageHeader
       title="Cartera · Facturas"
-      subtitle="Facturas de los últimos 2 años con su saldo"
+      subtitle="Facturas de venta de los últimos 2 años con su saldo, igual que el reporte de cuentas por cobrar"
       source="erp"
       :updated-at="erp.carteraFacturas.fetchedAt"
       :count="count"
@@ -74,7 +74,7 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
       :rows="rows"
       :loading="erp.carteraFacturas.loading && !erp.carteraFacturas.fetchedAt"
       :error="erp.carteraFacturas.error"
-      :search-keys="['per_nombre', 'trc_numdoc', 'numdoc_fmt', 'trc_serdoc']"
+      :search-keys="['per_nombre', 'trc_numdoc', 'numdoc_fmt', 'trc_serdoc', 'numero_factura_impreso']"
       search-placeholder="Buscar por cliente o número de factura…"
       :page-size="12"
       @retry="erp.fetchCarteraFacturas(true)"
