@@ -11,6 +11,17 @@ import type { FacturaCartera } from '@/types/erp'
  */
 export type EstadoCartera = 'vencida' | 'vigente' | 'sin_plazo'
 
+/**
+ * Sólo las facturas de venta (trc_tipdoc = 1) son cuentas por cobrar. La vista
+ * del ERP también trae notas de crédito (4) con saldo positivo. El backend ya
+ * las filtra; esto cubre una copia vieja del caché que aún no traiga el tipo.
+ */
+export function esFacturaVenta(f: Pick<FacturaCartera, 'trc_tipdoc' | 'descripcion_tipdoc'>): boolean {
+  if (f.trc_tipdoc !== undefined && f.trc_tipdoc !== null) return String(f.trc_tipdoc) === '1'
+  if (f.descripcion_tipdoc) return /factura/i.test(f.descripcion_tipdoc)
+  return true
+}
+
 type FacturaPlazo = Pick<FacturaCartera, 'estado_factura' | 'per_diascredito'>
 
 export function tienePlazo(f: FacturaPlazo): boolean {
