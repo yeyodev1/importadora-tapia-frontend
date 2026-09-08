@@ -1,0 +1,257 @@
+@use "@/styles/index.scss" as *;
+// Estilos del modal de cuenta (UserFormModal). Mobile first: en celular sube
+// desde abajo a pantalla casi completa; en escritorio se centra.
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  background: rgba($primary-dark, 0.5);
+  backdrop-filter: blur(3px);
+
+  @media (min-width: 560px) {
+    align-items: center;
+    padding: 16px;
+  }
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: 94vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  padding: 18px 16px 20px;
+  box-shadow: var(--shadow-pop);
+
+  @media (min-width: 560px) {
+    border-radius: 14px;
+    padding: 22px 24px 24px;
+  }
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  h2 { font-size: 1.05rem; font-weight: 800; }
+
+  &__hint {
+    margin-top: 4px;
+    font-family: $font-secondary;
+    font-size: 0.76rem;
+    color: var(--text-soft);
+    line-height: 1.5;
+  }
+
+  &__x {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--text-soft);
+    cursor: pointer;
+    &:hover { color: var(--text); border-color: var(--border-strong); }
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border: none;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+  }
+
+  legend {
+    margin-bottom: 8px;
+    font-family: $font-secondary;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $primary;
+  }
+
+  label.field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    > span {
+      font-family: $font-secondary;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-soft);
+      em { font-style: normal; font-weight: 400; color: var(--text-faint); }
+    }
+
+    input[type='email'],
+    input[type='text'] {
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 9px;
+      font-family: $font-secondary;
+      font-size: 0.88rem;
+      color: var(--text);
+      background: var(--surface);
+      &:focus { outline: none; border-color: $primary; box-shadow: 0 0 0 3px rgba($primary, 0.12); }
+      &:disabled { background: rgba($primary-dark, 0.04); color: var(--text-faint); }
+    }
+  }
+
+  &__error {
+    font-family: $font-secondary;
+    font-size: 0.78rem;
+    color: darken($alert-error, 8%);
+    background: $alert-error-bg;
+    border-radius: 8px;
+    padding: 9px 12px;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+
+    @media (min-width: 560px) {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  &__btns {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 8px;
+
+    @media (min-width: 560px) { flex-direction: row; margin-left: auto; }
+  }
+
+  &__cancel,
+  &__save {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 9px;
+    font-family: $font-principal;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, opacity 0.2s ease;
+  }
+
+  &__cancel {
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  &__save {
+    border: none;
+    background: $primary;
+    color: $white;
+    &:hover:not(:disabled) { background: darken($primary, 6%); }
+    &:disabled { opacity: 0.55; cursor: not-allowed; }
+  }
+}
+
+.pwd {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  @media (min-width: 560px) { flex-direction: row; > :first-child { flex: 1; } }
+
+  &__gen {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+    background: var(--surface);
+    font-family: $font-principal;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    &:hover { border-color: $primary; color: $primary; }
+  }
+}
+
+.otra {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: $font-secondary;
+  font-size: 0.78rem;
+  color: var(--text);
+  input { width: 18px; height: 18px; accent-color: $primary; }
+}
+
+.creadas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: $alert-success-bg;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-family: $font-secondary;
+    font-size: 0.76rem;
+    color: var(--text);
+    i { color: $secondary; }
+    small { color: var(--text-soft); margin-left: auto; }
+  }
+}
+
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
+  .modal { transition: transform 0.25s var(--ease-out); }
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+  .modal { transform: translateY(16px); }
+}
