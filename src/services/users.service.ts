@@ -9,6 +9,8 @@ interface UsersResponse {
 interface UserResponse {
   success: boolean
   data: AppUser
+  /** Sólo al crear: si se pudo enviar el correo con las credenciales. */
+  emailSent?: boolean
 }
 
 export interface CreateUserPayload {
@@ -25,9 +27,9 @@ class UsersService extends APIBase {
     return res.data.data
   }
 
-  async create(payload: CreateUserPayload): Promise<AppUser> {
+  async create(payload: CreateUserPayload): Promise<{ user: AppUser; emailSent: boolean }> {
     const res = await this.post<UserResponse>('users', payload)
-    return res.data.data
+    return { user: res.data.data, emailSent: Boolean(res.data.emailSent) }
   }
 
   async update(
