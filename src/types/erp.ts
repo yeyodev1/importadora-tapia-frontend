@@ -51,11 +51,30 @@ export interface InventarioItem {
   bod_codigo: string
   bod_nombre: string
   stock_actual: string
+  /** Regla del admin: el producto sólo se vende al contado. */
+  solo_contado?: boolean
+}
+
+export interface ReglaProducto {
+  proCodigo: string
+  proNombre: string
+  soloContado: boolean
+  actualizadoPor?: string
+  updatedAt?: string
 }
 
 export interface InventarioDisponible extends InventarioItem {
   reservado: number
   disponible: number
+}
+
+/** Qué parte del inventario ve un vendedor (lo asigna el admin). */
+export interface AsignacionInventario {
+  venCodigo: string
+  restringido: boolean
+  productos: string[]
+  actualizadoPor?: string
+  updatedAt?: string
 }
 
 export interface ErpListResponse<T> {
