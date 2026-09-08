@@ -5,9 +5,24 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import DataTable, { type Column } from '@/components/ui/DataTable.vue'
 import { formatQty } from '@/utils/format'
+import { erpService } from '@/services/erp.service'
+import { useUserStore } from '@/stores/user'
+import type { AsignacionInventario } from '@/types/erp'
 
 const erp = useErpStore()
-onMounted(() => erp.fetchInventario())
+const userStore = useUserStore()
+const asignacion = ref<AsignacionInventario | null>(null)
+
+onMounted(async () => {
+  erp.fetchInventario()
+  if (!userStore.isAdmin) {
+    try {
+      asignacion.value = await erpService.miAsignacionInventario()
+    } catch {
+      asignacion.value = null
+    }
+  }
+})
 
 const bodega = ref('todas')
 
@@ -28,7 +43,21 @@ const columns: Column[] = [
   { key: 'uni_nombre', label: 'Unidad' },
   { key: 'bod_nombre', label: 'Bodega', sortable: true },
   { key: 'stock_actual', label: 'Stock', align: 'right', sortable: true },
+  { key: 'solo_contado', label: 'Venta', align: 'center' },
 ]
+
+/** Admin: marcar/desmarcar "solo contado" (aplica a todas las bodegas del producto). */
+const guardandoRegla = ref<string | null>(null)
+async function toggleSoloContado(row: { pro_codigo: string; pro_nombre: string; solo_contado?: boolean }) {
+  if (!userStore.isAdmin || guardandoRegla.value) return
+  guardandoRegla.value = row.pro_codigo
+  try {
+    const r = await erpService.guardarReglaProducto(row.pro_codigo, { soloContado: !row.solo_contado, proNombre: row.pro_nombre })
+    for (const i of erp.inventario.data) if (i.pro_codigo === r.proCodigo) i.solo_contado = r.soloContado
+  } finally {
+    guardandoRegla.value = null
+  }
+}
 
 const count = computed(() => (erp.inventario.fetchedAt ? rows.value.length : null))
 
@@ -49,6 +78,12 @@ function stockLabel(value: string): string {
 
 <template>
   <div>
+    <p v-if="asignacion?.restringido" class="asignado">
+      <i class="fa-solid fa-filter"></i>
+      Ves solo el inventario que administración te asignó
+      (<b>{{ asignacion.productos.length }}</b> producto{{ asignacion.productos.length === 1 ? '' : 's' }}).
+    </p>
+
     <PageHeader
       title="Inventario"
       subtitle="Existencias por producto y bodega"
@@ -102,6 +137,23 @@ function stockLabel(value: string): string {
           <BaseBadge :tone="stockTone(value)">{{ stockLabel(value) }}</BaseBadge>
         </div>
       </template>
+      <template #cell-solo_contado="{ row }">
+        <button
+          v-if="userStore.isAdmin"
+          type="button"
+          class="contado-btn"
+          :class="{ 'is-on': row.solo_contado }"
+          :disabled="guardandoRegla === row.pro_codigo"
+          :title="row.solo_contado ? 'Quitar la regla de solo contado' : 'Marcar como solo contado'"
+          @click="toggleSoloContado(row)"
+        >
+          <i class="fa-solid" :class="row.solo_contado ? 'fa-money-bill-wave' : 'fa-handshake'"></i>
+          {{ row.solo_contado ? 'Solo contado' : 'Crédito o contado' }}
+        </button>
+        <BaseBadge v-else :tone="row.solo_contado ? 'warning' : 'neutral'">
+          {{ row.solo_contado ? 'Solo contado' : 'Crédito o contado' }}
+        </BaseBadge>
+      </template>
 
       <template #mobile-card="{ row }">
         <div class="mcard">
@@ -113,6 +165,18 @@ function stockLabel(value: string): string {
             {{ row.bod_nombre }} · {{ row.uni_nombre }} ·
             <b>{{ formatQty(row.stock_actual) }}</b> en stock
           </p>
+          <button
+            v-if="userStore.isAdmin"
+            type="button"
+            class="contado-btn"
+            :class="{ 'is-on': row.solo_contado }"
+            :disabled="guardandoRegla === row.pro_codigo"
+            @click="toggleSoloContado(row)"
+          >
+            <i class="fa-solid" :class="row.solo_contado ? 'fa-money-bill-wave' : 'fa-handshake'"></i>
+            {{ row.solo_contado ? 'Solo contado' : 'Crédito o contado' }}
+          </button>
+          <span v-else-if="row.solo_contado" class="contado-btn is-on"><i class="fa-solid fa-money-bill-wave"></i> Solo contado</span>
         </div>
       </template>
     </DataTable>
@@ -120,6 +184,44 @@ function stockLabel(value: string): string {
 </template>
 
 <style lang="scss" scoped>
+.contado-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  font-family: $font-secondary;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  i { color: var(--text-faint); }
+  &:hover { border-color: $primary; color: var(--text); }
+  &.is-on { border-color: rgba($alert-warning, 0.7); background: $alert-warning-bg; color: darken($alert-warning, 25%); i { color: darken($alert-warning, 15%); } }
+  &:disabled { opacity: 0.6; cursor: wait; }
+}
+
+.asignado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  border: 1px solid rgba($primary, 0.2);
+  font-family: $font-secondary;
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  i { color: $primary; }
+  b { color: var(--text); }
+}
+
 .chips {
   display: flex;
   align-items: center;
