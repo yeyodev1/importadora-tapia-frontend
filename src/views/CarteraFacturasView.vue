@@ -10,20 +10,20 @@ import { esVencida, tienePlazo, estadoCartera, estaPagada, etiquetaEstado, haceD
 const erp = useErpStore()
 onMounted(() => erp.fetchCarteraFacturas())
 
-type Filtro = 'con_saldo' | 'vencidas' | 'pagadas' | 'todas'
+// La vista del ERP es de cuentas por cobrar: sólo trae facturas con saldo.
+// Las ya pagadas no llegan, así que no hay filtro "Pagadas".
+type Filtro = 'todas' | 'vencidas' | 'sin_plazo'
 const FILTROS: { value: Filtro; label: string }[] = [
-  { value: 'con_saldo', label: 'Con saldo' },
+  { value: 'todas', label: 'Todas con saldo' },
   { value: 'vencidas', label: 'Vencidas' },
-  { value: 'pagadas', label: 'Pagadas' },
-  { value: 'todas', label: 'Todas' },
+  { value: 'sin_plazo', label: 'Sin plazo de crédito' },
 ]
-const estado = ref<Filtro>('con_saldo')
+const estado = ref<Filtro>('todas')
 
 function pasaFiltro(f: (typeof erp.carteraFacturas.data)[number]) {
   if (estado.value === 'todas') return true
-  if (estado.value === 'pagadas') return estaPagada(f)
   if (estado.value === 'vencidas') return esVencida(f)
-  return !estaPagada(f)
+  return !tienePlazo(f) && !estaPagada(f)
 }
 
 const rows = computed(() =>
@@ -54,7 +54,7 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
   <div>
     <PageHeader
       title="Cartera · Facturas"
-      subtitle="Facturas de venta de los últimos 2 años con su saldo, igual que el reporte de cuentas por cobrar"
+      subtitle="Facturas de venta con saldo pendiente (últimos 2 años), igual que el reporte de cuentas por cobrar del ERP"
       source="erp"
       :updated-at="erp.carteraFacturas.fetchedAt"
       :count="count"
