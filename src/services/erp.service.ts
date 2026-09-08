@@ -9,6 +9,8 @@ import type {
   ErpListResponse,
   LoginResponse,
   EstadoErp,
+  AsignacionInventario,
+  ReglaProducto,
 } from '@/types/erp'
 
 class ErpService extends APIBase {
@@ -46,6 +48,33 @@ class ErpService extends APIBase {
   /** Inventario con la reserva de pedidos descontada (disponible real). */
   async getInventarioDisponible(): Promise<InventarioDisponible[]> {
     const res = await this.get<ErpListResponse<InventarioDisponible>>('inventario/disponible')
+    return res.data.data
+  }
+
+  /** Inventario asignado al usuario autenticado (para explicar el filtro en pantalla). */
+  async miAsignacionInventario(): Promise<AsignacionInventario> {
+    const res = await this.get<{ success: boolean; data: AsignacionInventario }>('inventario/asignaciones/mia')
+    return res.data.data
+  }
+
+  async getAsignacionesInventario(): Promise<AsignacionInventario[]> {
+    const res = await this.get<{ success: boolean; data: AsignacionInventario[] }>('inventario/asignaciones')
+    return res.data.data
+  }
+
+  async guardarAsignacionInventario(venCodigo: string, payload: { restringido: boolean; productos: string[] }): Promise<AsignacionInventario> {
+    const res = await this.put<{ success: boolean; data: AsignacionInventario }>(`inventario/asignaciones/${venCodigo}`, payload)
+    return res.data.data
+  }
+
+  async getReglasProducto(): Promise<ReglaProducto[]> {
+    const res = await this.get<{ success: boolean; data: ReglaProducto[] }>('inventario/reglas')
+    return res.data.data
+  }
+
+  /** Marca o desmarca un producto como "solo contado" (admin). */
+  async guardarReglaProducto(proCodigo: string, payload: { soloContado: boolean; proNombre?: string }): Promise<ReglaProducto> {
+    const res = await this.put<{ success: boolean; data: ReglaProducto }>(`inventario/reglas/${encodeURIComponent(proCodigo)}`, payload)
     return res.data.data
   }
 
