@@ -48,3 +48,10 @@ export function initials(name: string | null | undefined): string {
   const parts = name.trim().split(/\s+/)
   return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase()
 }
+
+/** Plazo de crédito de un pedido: "Contado", "30 días" o "—" si no se registró. */
+export function formatPlazo(dias: number | null | undefined): string {
+  if (dias === null || dias === undefined) return '—'
+  if (Number(dias) === 0) return 'Contado'
+  return `${dias} días`
+}
