@@ -53,10 +53,11 @@ const topDeudores = computed(() =>
     .slice(0, 7),
 )
 
+/** Las facturas con saldo más antiguas: las que más urge cobrar. */
 const proximasVencer = computed(() =>
   [...erp.carteraFacturas.data]
-    .filter((f) => !esVencida(f) && Number(f.saldo_pendiente) > 0)
-    .sort((a, b) => a.fecha_vencimiento.localeCompare(b.fecha_vencimiento))
+    .filter((f) => Number(f.saldo_pendiente) > 0)
+    .sort((a, b) => a.trc_fecha.localeCompare(b.trc_fecha))
     .slice(0, 6),
 )
 
