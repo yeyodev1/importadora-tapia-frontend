@@ -5,20 +5,31 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import DataTable, { type Column } from '@/components/ui/DataTable.vue'
 import { formatMoney, formatDate, formatNumFactura } from '@/utils/format'
-import { esVencida, tienePlazo, estadoCartera, ESTADO_CARTERA_BADGE } from '@/utils/cartera'
+import { esVencida, tienePlazo, estadoCartera, estaPagada, etiquetaEstado, haceDias, ESTADO_CARTERA_BADGE } from '@/utils/cartera'
 
 const erp = useErpStore()
 onMounted(() => erp.fetchCarteraFacturas())
 
-const estado = ref<'todas' | 'sin_vencer' | 'vencidas'>('todas')
+type Filtro = 'con_saldo' | 'vencidas' | 'pagadas' | 'todas'
+const FILTROS: { value: Filtro; label: string }[] = [
+  { value: 'con_saldo', label: 'Con saldo' },
+  { value: 'vencidas', label: 'Vencidas' },
+  { value: 'pagadas', label: 'Pagadas' },
+  { value: 'todas', label: 'Todas' },
+]
+const estado = ref<Filtro>('con_saldo')
+
+function pasaFiltro(f: (typeof erp.carteraFacturas.data)[number]) {
+  if (estado.value === 'todas') return true
+  if (estado.value === 'pagadas') return estaPagada(f)
+  if (estado.value === 'vencidas') return esVencida(f)
+  return !estaPagada(f)
+}
 
 const rows = computed(() =>
-  (estado.value === 'todas'
-    ? erp.carteraFacturas.data
-    : erp.carteraFacturas.data.filter((f) =>
-        estado.value === 'vencidas' ? esVencida(f) : !esVencida(f),
-      )
-  ).map((f) => ({ ...f, numdoc_fmt: formatNumFactura(f.trc_numdoc) })),
+  erp.carteraFacturas.data
+    .filter(pasaFiltro)
+    .map((f) => ({ ...f, numdoc_fmt: formatNumFactura(f.trc_numdoc) })),
 )
 
 const saldoFiltrado = computed(() =>
@@ -29,7 +40,7 @@ const columns: Column[] = [
   { key: 'per_nombre', label: 'Cliente', sortable: true },
   { key: 'documento', label: 'N° factura' },
   { key: 'trc_fecha', label: 'Emisión', sortable: true },
-  { key: 'fecha_vencimiento', label: 'Vencimiento', sortable: true },
+  { key: 'fecha_vencimiento', label: 'Antigüedad', sortable: true },
   { key: 'trc_totfact', label: 'Total', align: 'right', sortable: true },
   { key: 'total_abonado', label: 'Abonado', align: 'right' },
   { key: 'saldo_pendiente', label: 'Saldo', align: 'right', sortable: true },
@@ -53,14 +64,14 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
       <template #actions>
         <div class="filters">
           <button
-            v-for="opt in ['todas', 'sin_vencer', 'vencidas'] as const"
-            :key="opt"
+            v-for="opt in FILTROS"
+            :key="opt.value"
             type="button"
             class="filters__btn"
-            :class="{ 'is-active': estado === opt, 'is-danger': opt === 'vencidas' }"
-            @click="estado = opt"
+            :class="{ 'is-active': estado === opt.value, 'is-danger': opt.value === 'vencidas' }"
+            @click="estado = opt.value"
           >
-            {{ opt === 'todas' ? 'Todas' : opt === 'sin_vencer' ? 'Sin vencer' : 'Vencidas' }}
+            {{ opt.label }}
           </button>
           <span class="filters__total">
             Saldo: <strong>{{ formatMoney(saldoFiltrado) }}</strong>
@@ -95,9 +106,11 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
       </template>
 
       <template #cell-trc_fecha="{ value }">{{ formatDate(value) }}</template>
-      <!-- Sin días de crédito configurados el "vencimiento" del ERP es la misma fecha de emisión: no informar. -->
+      <!-- Sin días de crédito el "vencimiento" del ERP es la misma emisión: se muestra la antigüedad. -->
       <template #cell-fecha_vencimiento="{ row, value }">
-        {{ tienePlazo(row) ? formatDate(value) : '—' }}
+        <span v-if="estaPagada(row)" class="faint">—</span>
+        <template v-else-if="tienePlazo(row)">vence {{ formatDate(value) }}</template>
+        <template v-else>{{ haceDias(row.trc_fecha) }}</template>
       </template>
       <template #cell-trc_totfact="{ value }">{{ formatMoney(value) }}</template>
       <template #cell-total_abonado="{ value }">{{ formatMoney(value) }}</template>
@@ -110,7 +123,7 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
 
       <template #cell-estado_factura="{ row }">
         <BaseBadge :tone="ESTADO_CARTERA_BADGE[estadoCartera(row)].tone">
-          {{ ESTADO_CARTERA_BADGE[estadoCartera(row)].label }}
+          {{ etiquetaEstado(row) }}
         </BaseBadge>
       </template>
 
@@ -119,13 +132,13 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
           <div class="mcard__head">
             <strong>{{ row.per_nombre }}</strong>
             <BaseBadge :tone="ESTADO_CARTERA_BADGE[estadoCartera(row)].tone">
-              {{ ESTADO_CARTERA_BADGE[estadoCartera(row)].label }}
+              {{ etiquetaEstado(row) }}
             </BaseBadge>
           </div>
           <p class="mcard__doc">
             <code class="doc">{{ formatNumFactura(row.trc_numdoc) }}</code>
-            <template v-if="tienePlazo(row)"> vence {{ formatDate(row.fecha_vencimiento) }}</template>
-            <template v-else> emitida {{ formatDate(row.trc_fecha) }}</template>
+            emitida {{ formatDate(row.trc_fecha) }}
+            <template v-if="tienePlazo(row) && !estaPagada(row)"> · vence {{ formatDate(row.fecha_vencimiento) }}</template>
           </p>
           <div class="mcard__amounts">
             <span>Total <b>{{ formatMoney(row.trc_totfact) }}</b></span>
@@ -219,6 +232,10 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
     font-size: 0.64rem;
     color: var(--text-faint);
   }
+}
+
+.faint {
+  color: var(--text-faint);
 }
 
 .saldo {
