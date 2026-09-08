@@ -65,6 +65,15 @@ export interface ErpListResponse<T> {
 
 export type UserRole = 'admin' | 'vendedor'
 
+/** Vendedor del ERP que ya no trabaja con Tapia: se oculta en la app. */
+export interface VendedorOculto {
+  venCodigo: string
+  venNombre: string
+  motivo: string
+  ocultadoPor: string
+  createdAt: string
+}
+
 export interface AppUser {
   id: string
   email: string
@@ -125,6 +134,8 @@ export interface Pedido {
   clienteCodigo?: string
   items: PedidoItem[]
   total: number
+  /** Plazo de crédito en días (0 = contado). Pedidos viejos pueden no traerlo. */
+  plazoCreditoDias?: number
   fotoUrl?: string
   observacion?: string
   motivoRechazo?: string
@@ -135,6 +146,7 @@ export interface Pedido {
 export interface NuevoPedido {
   clienteNombre: string
   clienteCodigo?: string
+  plazoCreditoDias: number
   items: Omit<PedidoItem, 'subtotal'>[]
   foto?: string
   observacion?: string
