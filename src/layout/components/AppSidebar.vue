@@ -31,6 +31,7 @@ const icons: Record<string, string> = {
   route: 'fa-route',
   key: 'fa-key',
   user: 'fa-circle-user',
+  usersGear: 'fa-users-gear',
 }
 
 const allSections: { title: string; items: NavItem[] }[] = [
@@ -66,11 +67,12 @@ const allSections: { title: string; items: NavItem[] }[] = [
     ],
   },
   {
+    title: 'Administración',
+    items: [{ to: '/equipo', label: 'Usuarios y accesos', icon: 'usersGear', adminOnly: true }],
+  },
+  {
     title: 'Cuenta',
-    items: [
-      { to: '/me', label: 'Mi perfil', icon: 'user' },
-      { to: '/equipo', label: 'Equipo', icon: 'key', adminOnly: true },
-    ],
+    items: [{ to: '/me', label: 'Mi perfil', icon: 'user' }],
   },
 ]
 
