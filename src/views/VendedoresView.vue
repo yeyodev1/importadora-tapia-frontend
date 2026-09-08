@@ -14,7 +14,13 @@ onMounted(() => {
   erp.fetchVendedores()
   erp.fetchClientes()
   usersStore.fetch()
+  usersStore.fetchOcultos()
 })
+
+/** Los vendedores ocultos (ya no trabajan con Tapia) no se listan. */
+const vendedoresVisibles = computed(() =>
+  erp.vendedores.data.filter((v) => !usersStore.venCodigosOcultos.has(v.ven_codigo)),
+)
 
 const clientesPorVendedor = computed(() => {
   const map = new Map<string, number>()
@@ -25,7 +31,7 @@ const clientesPorVendedor = computed(() => {
 })
 
 const loading = computed(() => erp.vendedores.loading && !erp.vendedores.fetchedAt)
-const count = computed(() => (erp.vendedores.fetchedAt ? erp.vendedores.data.length : null))
+const count = computed(() => (erp.vendedores.fetchedAt ? vendedoresVisibles.value.length : null))
 </script>
 
 <template>
@@ -62,7 +68,7 @@ const count = computed(() => (erp.vendedores.fetchedAt ? erp.vendedores.data.len
 
     <div v-else class="grid">
       <article
-        v-for="(v, i) in erp.vendedores.data"
+        v-for="(v, i) in vendedoresVisibles"
         :key="v.ven_codigo"
         class="card stagger-item"
         :style="{ '--i': i }"
