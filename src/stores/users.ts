@@ -33,9 +33,9 @@ export const useUsersStore = defineStore('users', {
     },
 
     async create(payload: CreateUserPayload) {
-      const user = await usersService.create(payload)
+      const { user, emailSent } = await usersService.create(payload)
       this.data.push(user)
-      return user
+      return { user, emailSent }
     },
 
     async update(id: string, payload: Parameters<typeof usersService.update>[1]) {
