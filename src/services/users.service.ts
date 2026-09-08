@@ -1,5 +1,5 @@
 import APIBase from './httpBase'
-import type { AppUser, UserRole } from '@/types/erp'
+import type { AppUser, UserRole, VendedorOculto } from '@/types/erp'
 
 interface UsersResponse {
   success: boolean
@@ -42,6 +42,20 @@ class UsersService extends APIBase {
 
   async remove(id: string): Promise<void> {
     await this.delete(`users/${id}`)
+  }
+
+  async vendedoresOcultos(): Promise<VendedorOculto[]> {
+    const res = await this.get<{ success: boolean; data: VendedorOculto[] }>('users/vendedores-ocultos')
+    return res.data.data
+  }
+
+  async ocultarVendedor(venCodigo: string, venNombre: string, motivo?: string): Promise<VendedorOculto> {
+    const res = await this.post<{ success: boolean; data: VendedorOculto }>('users/vendedores-ocultos', { venCodigo, venNombre, motivo })
+    return res.data.data
+  }
+
+  async restaurarVendedor(venCodigo: string): Promise<void> {
+    await this.delete(`users/vendedores-ocultos/${venCodigo}`)
   }
 }
 
