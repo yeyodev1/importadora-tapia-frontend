@@ -84,11 +84,12 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('../views/PerfilView.vue'),
         meta: { title: 'Mi perfil' },
       },
+      { path: 'usuarios', redirect: '/equipo' },
       {
         path: 'equipo',
         name: 'Equipo',
         component: () => import('../views/EquipoView.vue'),
-        meta: { title: 'Equipo', adminOnly: true },
+        meta: { title: 'Usuarios y accesos', adminOnly: true },
       },
     ],
   },
