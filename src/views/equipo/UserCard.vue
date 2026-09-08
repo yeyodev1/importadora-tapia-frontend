@@ -56,8 +56,9 @@ defineEmits<{ edit: []; remove: [] }>()
   }
 
   &__avatar {
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 38px;
     height: 38px;
     border-radius: 50%;
