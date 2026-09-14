@@ -12,6 +12,11 @@ import { pedidosService } from '@/services/pedidos.service'
  */
 const model = defineModel<string[]>({ default: () => [] })
 const emit = defineEmits<{ ocupado: [v: boolean] }>()
+/** Textos configurables: se reusa para las fotos del despacho de bodega. */
+const props = withDefaults(
+  defineProps<{ textoFoto?: string; textoOtra?: string; tituloRecorte?: string; nombre?: string }>(),
+  { textoFoto: 'Tomar foto de la OP', textoOtra: 'Tomar otra foto', tituloRecorte: 'Recorta la orden de pedido', nombre: 'de la OP' },
+)
 
 const MAX = 10
 const progreso = ref('')
@@ -36,7 +41,7 @@ async function onFiles(files: File[]) {
       }
       const file = await recorte.prepararArchivo(original)
       if (!file) continue
-      progreso.value = files.length > 1 ? `Subiendo ${i + 1} de ${files.length}…` : 'Subiendo foto de la OP…'
+      progreso.value = files.length > 1 ? `Subiendo ${i + 1} de ${files.length}…` : 'Subiendo foto…'
       const archivo = await subirArchivo(file, () => pedidosService.firmaSubida())
       model.value = [...model.value, archivo.url]
     }
@@ -76,7 +81,7 @@ function confirmarQuitar(url: string) {
     </div>
 
     <div v-if="quitando" class="op__confirma" role="alert">
-      <span>{{ quitando.paso === 1 ? `¿Quitar la foto ${model.indexOf(quitando.url) + 1}?` : 'Se quitará de la orden de pedido. ¿Confirmas?' }}</span>
+      <span>{{ quitando.paso === 1 ? `¿Quitar la foto ${model.indexOf(quitando.url) + 1}?` : 'Se quitará esta foto. ¿Confirmas?' }}</span>
       <button type="button" class="op__no" @click="quitando = null">Cancelar</button>
       <button type="button" class="op__si" @click="confirmarQuitar(quitando.url)">
         {{ quitando.paso === 1 ? 'Quitar' : 'Sí, quitar' }}
@@ -84,19 +89,19 @@ function confirmarQuitar(url: string) {
     </div>
 
     <p v-if="model.length" class="op__info">
-      <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ model.length }} foto{{ model.length === 1 ? '' : 's' }} de la OP · se enlazan al enviar el pedido. Toca una para verla.
+      <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ model.length }} foto{{ model.length === 1 ? '' : 's' }} {{ props.nombre }} · toca una para verla.
     </p>
 
     <SelectorArchivo
       v-if="model.length < MAX"
       :progreso="progreso"
-      :texto-foto="model.length ? 'Tomar otra foto' : 'Tomar foto de la OP'"
+      :texto-foto="model.length ? props.textoOtra : props.textoFoto"
       @elegir="onFiles"
     />
 
     <p v-if="error" class="op__err" role="alert">{{ error }}</p>
 
-    <RecortarImagen :file="recorte.archivo.value" titulo="Recorta la orden de pedido" @listo="recorte.listo" @cancelar="recorte.cancelar" />
+    <RecortarImagen :file="recorte.archivo.value" :titulo="props.tituloRecorte" @listo="recorte.listo" @cancelar="recorte.cancelar" />
   </div>
 </template>
 
