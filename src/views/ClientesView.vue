@@ -87,7 +87,13 @@ const count = computed(() => (erp.clientes.fetchedAt ? erp.clientes.data.length 
       :count="count"
       :refreshing="erp.clientes.loading && !!erp.clientes.fetchedAt"
       @refresh="erp.fetchClientes(true)"
-    />
+    >
+      <template #actions>
+        <RouterLink to="/solicitudes/nueva" class="nuevo-cliente">
+          <i class="fa-solid fa-user-plus"></i> Nuevo cliente
+        </RouterLink>
+      </template>
+    </PageHeader>
 
     <DataTable
       :columns="columns"
@@ -144,6 +150,12 @@ const count = computed(() => (erp.clientes.fetchedAt ? erp.clientes.data.length 
 </template>
 
 <style lang="scss" scoped>
+.nuevo-cliente {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 16px; border-radius: 8px;
+  background: $primary; color: $white; font-family: $font-principal; font-size: 0.8rem; font-weight: 700; text-decoration: none;
+  &:hover { background: darken($primary, 6%); }
+}
+
 .client {
   display: flex;
   align-items: center;
