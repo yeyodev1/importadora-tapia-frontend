@@ -31,6 +31,12 @@ class PedidosService extends APIBase {
     return res.data.data
   }
 
+  /** Reemplaza las fotos de la OP de un pedido ya enviado (agregar, cambiar o quitar). */
+  async setFotos(id: string, fotos: string[]): Promise<Pedido> {
+    const res = await this.patch<OneResponse>(`pedidos/${id}/fotos`, { fotos })
+    return res.data.data
+  }
+
   /** Firma para subir la foto de la orden de pedido (OP) directo a Cloudinary. */
   async firmaSubida(): Promise<FirmaSubida> {
     const res = await this.post<{ success: boolean; data: FirmaSubida }>('pedidos/firma-subida', {})
