@@ -4,6 +4,9 @@ import { useCobrosStore } from '@/stores/cobros'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import SignaturePad from '@/components/ui/SignaturePad.vue'
 import ClienteFacturaPicker from './ClienteFacturaPicker.vue'
+import SelectorArchivo from '@/components/ui/SelectorArchivo.vue'
+import RecortarImagen from '@/components/ui/RecortarImagen.vue'
+import { useRecorte } from '@/composables/useRecorte'
 import { fileToCompressedDataUri } from '@/utils/image'
 import type { MetodoPago } from '@/types/erp'
 import type { ApiError } from '@/types'
@@ -59,11 +62,16 @@ watch(
   },
 )
 
-async function onFile(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
+const recorte = useRecorte()
+
+/** Comprobante desde la cámara o la galería; se recorta antes de adjuntar. */
+async function onFiles(files: File[]) {
+  const original = files[0]
+  if (!original) return
+  error.value = ''
+  const file = await recorte.prepararArchivo(original)
   if (!file) return
   preparing.value = true
-  error.value = ''
   try {
     comprobante.value = await fileToCompressedDataUri(file)
     fileName.value = file.name
@@ -169,18 +177,22 @@ function tinyPlaceholder() {
                 <em v-if="requiereFoto()">· obligatoria</em>
                 <em v-else class="opt">· opcional en efectivo</em>
               </span>
-              <label class="upload" :class="{ 'has-file': comprobante }">
-                <input type="file" accept="image/*" capture="environment" @change="onFile" />
-                <BaseSpinner v-if="preparing" :size="18" />
-                <template v-else-if="comprobante">
-                  <img :src="comprobante" alt="Comprobante" />
-                  <span>{{ fileName || 'Foto lista' }} · toca para cambiar</span>
-                </template>
-                <template v-else>
-                  <i class="fa-solid fa-camera"></i>
-                  <span>Tomar foto o elegir imagen</span>
-                </template>
-              </label>
+              <div v-if="comprobante" class="upload has-file">
+                <img :src="comprobante" alt="Comprobante" />
+                <span>{{ fileName || 'Foto lista' }}</span>
+                <button type="button" class="upload__cambiar" @click="comprobante = ''; fileName = ''">
+                  <i class="fa-solid fa-rotate"></i> Cambiar foto
+                </button>
+              </div>
+              <SelectorArchivo
+                v-else
+                :pdf="false"
+                :progreso="preparing ? 'Preparando foto…' : ''"
+                texto-foto="Tomar foto"
+                texto-galeria="Elegir de la galería"
+                @elegir="onFiles"
+              />
+              <RecortarImagen :file="recorte.archivo.value" titulo="Recorta el comprobante" @listo="recorte.listo" @cancelar="recorte.cancelar" />
             </div>
 
             <div class="fld">
@@ -259,6 +271,12 @@ form { display: flex; flex-direction: column; gap: 14px; }
   img { max-height: 120px; border-radius: 8px; }
   &:hover { border-color: $primary; }
   &.has-file { border-style: solid; border-color: $secondary; color: darken($secondary, 12%); }
+}
+.upload__cambiar {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px;
+  border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface);
+  font-family: $font-secondary; font-size: 0.78rem; font-weight: 700; color: var(--text); cursor: pointer;
+  &:hover { border-color: $primary; color: $primary; }
 }
 .err {
   font-family: $font-secondary; font-size: 0.78rem; color: darken($alert-error, 8%);
