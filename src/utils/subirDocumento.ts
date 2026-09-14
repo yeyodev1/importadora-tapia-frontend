@@ -1,15 +1,22 @@
 import { solicitudesService } from '@/services/solicitudes.service'
 import { fileToCompressedDataUri } from './image'
-import type { DocumentoSolicitud, TipoDocumento } from '@/types/solicitudes'
+import type { DocumentoSolicitud, FirmaSubida, TipoDocumento } from '@/types/solicitudes'
 
 const MAX_PDF_MB = 10
 
+export interface ArchivoSubido {
+  url: string
+  nombre: string
+  formato: 'imagen' | 'pdf'
+  bytes: number
+}
+
 /**
- * Sube un documento de la solicitud directo a Cloudinary con la firma del
- * backend. Fotos: se comprimen (la cámara del celular pesa mucho).
+ * Sube un archivo directo a Cloudinary con la firma que da el backend.
+ * Fotos: se comprimen (la cámara del celular pesa mucho).
  * PDF: se suben como "raw" para que siempre se puedan abrir y descargar.
  */
-export async function subirDocumento(file: File, tipo: TipoDocumento): Promise<DocumentoSolicitud> {
+export async function subirArchivo(file: File, obtenerFirma: () => Promise<FirmaSubida>): Promise<ArchivoSubido> {
   const esPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
   const esImagen = file.type.startsWith('image/')
   if (!esPdf && !esImagen) throw new Error('Solo se aceptan fotos o archivos PDF.')
@@ -17,9 +24,9 @@ export async function subirDocumento(file: File, tipo: TipoDocumento): Promise<D
     throw new Error(`El PDF pesa más de ${MAX_PDF_MB} MB. Escanéalo con menor calidad o súbelo como foto.`)
   }
 
-  let firma
+  let firma: FirmaSubida
   try {
-    firma = await solicitudesService.firmaSubida()
+    firma = await obtenerFirma()
   } catch (err) {
     throw new Error((err as { message?: string })?.message || 'No se pudo preparar la subida.')
   }
@@ -47,10 +54,14 @@ export async function subirDocumento(file: File, tipo: TipoDocumento): Promise<D
   }
 
   return {
-    tipo,
     url: data.secure_url,
     nombre: file.name.slice(0, 160),
     formato: esPdf ? 'pdf' : 'imagen',
     bytes: data.bytes || file.size,
   }
+}
+
+/** Documento de una solicitud de crédito (usa la firma de solicitudes). */
+export async function subirDocumento(file: File, tipo: TipoDocumento): Promise<DocumentoSolicitud> {
+  return { tipo, ...(await subirArchivo(file, () => solicitudesService.firmaSubida())) }
 }
