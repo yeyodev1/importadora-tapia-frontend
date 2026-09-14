@@ -12,6 +12,12 @@ const ROLES: { value: UserRole; label: string; icon: string; desc: string }[] = 
     desc: 'Ve solo sus clientes, su cartera, pedidos y visitas. Se vincula a un vendedor del ERP.',
   },
   {
+    value: 'bodega',
+    label: 'Bodega',
+    icon: 'fa-truck-ramp-box',
+    desc: 'Solo ve los pedidos para despachar y el inventario. Marca la salida con foto.',
+  },
+  {
     value: 'admin',
     label: 'Administrador',
     icon: 'fa-user-shield',
@@ -49,7 +55,8 @@ const ROLES: { value: UserRole; label: string; icon: string; desc: string }[] = 
 
   @media (min-width: 560px) {
     flex-direction: row;
-    > * { flex: 1 1 0; }
+    flex-wrap: wrap;
+    > * { flex: 1 1 150px; }
   }
 }
 
