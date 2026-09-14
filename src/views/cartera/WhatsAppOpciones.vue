@@ -31,7 +31,7 @@ const urlTodo = computed(() => urlWhatsApp(textoEstadoCuenta(props.factura.per_n
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="wa-titulo">
           <header class="modal__head">
             <div>
-              <h2 id="wa-titulo">📲 Compartir por WhatsApp</h2>
+              <h2 id="wa-titulo"><i class="fa-brands fa-whatsapp wa-icono" aria-hidden="true"></i> Compartir por WhatsApp</h2>
               <p class="modal__hint">¿Qué quieres enviar a {{ factura.per_nombre }}? Después eliges el contacto en WhatsApp.</p>
             </div>
             <button type="button" class="modal__x" aria-label="Cerrar" @click="emit('close')">
@@ -41,7 +41,7 @@ const urlTodo = computed(() => urlWhatsApp(textoEstadoCuenta(props.factura.per_n
 
           <div class="opciones">
             <a :href="urlSola" target="_blank" rel="noopener" class="opcion" @click="emit('close')">
-              <span class="opcion__emoji" aria-hidden="true">🧾</span>
+              <i class="fa-solid fa-file-invoice opcion__icono" aria-hidden="true"></i>
               <span class="opcion__txt">
                 <strong>Solo esta factura</strong>
                 <small>N.º {{ numeroFactura(factura) }} · saldo {{ formatMoney(factura.saldo_pendiente) }}</small>
@@ -50,7 +50,7 @@ const urlTodo = computed(() => urlWhatsApp(textoEstadoCuenta(props.factura.per_n
             </a>
 
             <a :href="urlTodo" target="_blank" rel="noopener" class="opcion is-todo" @click="emit('close')">
-              <span class="opcion__emoji" aria-hidden="true">📊</span>
+              <i class="fa-solid fa-chart-column opcion__icono" aria-hidden="true"></i>
               <span class="opcion__txt">
                 <strong>Todo lo que debe el cliente</strong>
                 <small>
@@ -76,6 +76,8 @@ const urlTodo = computed(() => urlWhatsApp(textoEstadoCuenta(props.factura.per_n
 <style lang="scss" scoped>
 @use '../equipo/form-modal';
 
+.wa-icono { color: #25d366; }
+
 .opciones {
   display: flex;
   flex-direction: column;
@@ -96,7 +98,7 @@ const urlTodo = computed(() => urlWhatsApp(textoEstadoCuenta(props.factura.per_n
   text-decoration: none;
   transition: border-color 0.2s ease, background 0.2s ease;
 
-  &__emoji { font-size: 1.7rem; line-height: 1; flex-shrink: 0; }
+  &__icono { width: 34px; flex-shrink: 0; font-size: 1.5rem; text-align: center; color: $primary; }
 
   &__txt {
     flex: 1;
