@@ -18,11 +18,11 @@ const perfil = ref<AppUser | null>(null)
 
 onMounted(async () => {
   userStore.hydrate()
-  if (!userStore.isAdmin) {
+  if (userStore.isVendedor) {
     erp.fetchClientes()
     erp.fetchCarteraFacturas()
   }
-  cobros.fetch()
+  if (!userStore.isBodega) cobros.fetch()
   try {
     perfil.value = (await erpService.me()) as unknown as AppUser
   } catch {
@@ -31,11 +31,11 @@ onMounted(async () => {
 })
 
 const nombre = computed(() => perfil.value?.name || userStore.name || 'Usuario')
-const rol = computed(() => (userStore.isAdmin ? 'Administrador' : 'Vendedor'))
+const rol = computed(() => (userStore.isAdmin ? 'Administrador' : userStore.isBodega ? 'Bodega' : 'Vendedor'))
 
-const misClientes = computed(() => (userStore.isAdmin ? null : erp.clientes.data.length))
+const misClientes = computed(() => (userStore.isVendedor ? erp.clientes.data.length : null))
 const miSaldo = computed(() =>
-  userStore.isAdmin
+  !userStore.isVendedor
     ? null
     : erp.carteraFacturas.data.reduce((s, f) => s + Number(f.saldo_pendiente || 0), 0),
 )
@@ -62,7 +62,7 @@ function logout() {
       <button class="card__logout" type="button" @click="logout">Cerrar sesión</button>
     </section>
 
-    <section class="stats" v-if="!userStore.isAdmin">
+    <section class="stats" v-if="userStore.isVendedor">
       <div class="stat">
         <span>Mis clientes</span>
         <b>{{ misClientes ?? '—' }}</b>
