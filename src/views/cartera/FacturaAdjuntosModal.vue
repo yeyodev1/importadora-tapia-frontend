@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import RecortarImagen from '@/components/ui/RecortarImagen.vue'
+import SelectorArchivo from '@/components/ui/SelectorArchivo.vue'
 import { useRecorte } from '@/composables/useRecorte'
 import { useFacturaAdjuntosStore } from '@/stores/facturaAdjuntos'
 import { useUserStore } from '@/stores/user'
@@ -36,10 +37,7 @@ watch(
 const archivos = computed(() => (props.factura ? store.porFactura.get(String(props.factura.trc_codigo)) || [] : []))
 const puedeQuitar = (a: FacturaAdjunto) => userStore.isAdmin || a.subidoPorId === userStore.id
 
-async function onFiles(e: Event) {
-  const input = e.target as HTMLInputElement
-  const files = Array.from(input.files || [])
-  input.value = ''
+async function onFiles(files: File[]) {
   if (!files.length || !props.factura) return
   error.value = ''
   try {
@@ -95,12 +93,7 @@ const miniatura = (a: FacturaAdjunto) => a.url.replace('/image/upload/', '/image
             </button>
           </header>
 
-          <label class="subir" :class="{ 'is-busy': progreso }">
-            <input type="file" accept="image/*,application/pdf" multiple :disabled="!!progreso" @change="onFiles" />
-            <BaseSpinner v-if="progreso" :size="16" />
-            <i v-else class="fa-solid fa-camera"></i>
-            {{ progreso || 'Tomar foto o subir PDF de la factura' }}
-          </label>
+          <SelectorArchivo class="selector" :progreso="progreso" texto-foto="Tomar foto de la factura" @elegir="onFiles" />
 
           <p v-if="error" class="modal__error" role="alert">{{ error }}</p>
 
@@ -148,13 +141,7 @@ const miniatura = (a: FacturaAdjunto) => a.url.replace('/image/upload/', '/image
 <style lang="scss" scoped>
 @use '../equipo/form-modal';
 
-.subir {
-  position: relative; display: flex; align-items: center; justify-content: center; gap: 9px;
-  min-height: 56px; margin-bottom: 12px; padding: 12px; border: 1.5px dashed $primary; border-radius: 11px;
-  background: var(--accent-soft); color: $primary; font-family: $font-secondary; font-size: 0.86rem; font-weight: 700; cursor: pointer;
-  input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-  &.is-busy { cursor: wait; color: var(--text-soft); }
-}
+.selector { margin-bottom: 12px; }
 .vacio { display: flex; align-items: center; gap: 8px; margin: 6px 0 12px; font-family: $font-secondary; font-size: 0.8rem; color: var(--text-soft); }
 .lista { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; max-height: 50vh; overflow-y: auto; }
 .item {
