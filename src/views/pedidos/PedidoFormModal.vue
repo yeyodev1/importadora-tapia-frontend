@@ -55,7 +55,7 @@ async function guardar() {
           </div>
 
           <div class="fld">
-            <span>Agregar producto</span>
+            <span>Productos del pedido <em class="req">· obligatorio, del inventario</em></span>
             <div class="search">
               <i class="fa-solid fa-magnifying-glass"></i>
               <input v-model="f.buscar.value" type="search" placeholder="Buscar en el inventario…" />
@@ -76,6 +76,9 @@ async function guardar() {
               </li>
             </ul>
             <p v-if="f.cargandoInv.value" class="hint-inv">Cargando disponibilidad…</p>
+            <p v-else-if="!f.lineas.value.length" class="hint-inv is-req">
+              <i class="fa-solid fa-circle-info"></i> Busca y toca cada producto. Sin productos el pedido no se envía y el stock no se reserva.
+            </p>
           </div>
 
           <div v-if="f.lineas.value.length" class="lineas">
@@ -117,7 +120,7 @@ async function guardar() {
             <div class="footer__total">Total <b>{{ formatMoney(f.total.value) }}</b></div>
             <div class="footer__btns">
               <button type="button" class="ghost" @click="emit('close')">Cancelar</button>
-              <button type="button" class="primary" :disabled="f.saving.value || f.subiendoFoto.value" @click="guardar">
+              <button type="button" class="primary" :disabled="f.saving.value || f.subiendoFoto.value || !f.lineas.value.length" @click="guardar">
                 <BaseSpinner v-if="f.saving.value" :size="14" light />
                 Enviar pedido
               </button>
@@ -182,6 +185,7 @@ async function guardar() {
       b { font-weight: 700; &.ok { color: darken($secondary, 10%); } &.x { color: $alert-error; } } } }
 }
 .hint-inv { font-family: $font-secondary; font-size: 0.72rem; color: var(--text-faint); margin: 6px 0 0; }
+.hint-inv.is-req { display: flex; gap: 6px; align-items: flex-start; font-weight: 600; color: darken($alert-warning, 25%); }
 .lineas { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
 .linea { border: 1px solid var(--border); border-radius: 10px; padding: 12px;
   &__top { display: flex; align-items: center; justify-content: space-between;
