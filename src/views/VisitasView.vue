@@ -116,10 +116,10 @@ function mapUrl(lat: number, lng: number) {
         </div>
         <p class="accion__salida-lbl">Al terminar, marca tu salida:</p>
         <div class="accion__salidas">
-          <button type="button" class="s ok" :disabled="trabajando" @click="pedirSalida('atendido')">✅ Atendido</button>
-          <button type="button" class="s wa" :disabled="trabajando" @click="pedirSalida('espera')">⏳ Esperó</button>
-          <button type="button" class="s ne" :disabled="trabajando" @click="pedirSalida('regreso')">🔁 Regresar</button>
-          <button type="button" class="s da" :disabled="trabajando" @click="pedirSalida('abandono')">🚫 No atendido</button>
+          <button type="button" class="s ok" :disabled="trabajando" @click="pedirSalida('atendido')"><i class="fa-solid fa-circle-check"></i> Atendido</button>
+          <button type="button" class="s wa" :disabled="trabajando" @click="pedirSalida('espera')"><i class="fa-solid fa-hourglass-half"></i> Esperó</button>
+          <button type="button" class="s ne" :disabled="trabajando" @click="pedirSalida('regreso')"><i class="fa-solid fa-rotate-left"></i> Regresar</button>
+          <button type="button" class="s da" :disabled="trabajando" @click="pedirSalida('abandono')"><i class="fa-solid fa-ban"></i> No atendido</button>
         </div>
       </template>
 
