@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { watch } from 'vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
-import PhotoUpload from '@/components/ui/PhotoUpload.vue'
+import FotoOrdenPedido from './FotoOrdenPedido.vue'
 import PlazoCreditoPicker from './PlazoCreditoPicker.vue'
 import { usePedidoForm } from './usePedidoForm'
 import { formatMoney, formatQty } from '@/utils/format'
@@ -102,8 +102,8 @@ async function guardar() {
           </div>
 
           <div class="fld">
-            <span>Foto (opcional) <em class="opt">· local, nota manuscrita, etc.</em></span>
-            <PhotoUpload v-model="f.foto.value" label="Adjuntar foto del pedido" />
+            <span>Fotos de la orden de pedido (OP) <em class="opt">· opcional, puedes tomar varias</em></span>
+            <FotoOrdenPedido v-model="f.fotos.value" @ocupado="(v) => (f.subiendoFoto.value = v)" />
           </div>
 
           <label class="fld">
@@ -117,7 +117,7 @@ async function guardar() {
             <div class="footer__total">Total <b>{{ formatMoney(f.total.value) }}</b></div>
             <div class="footer__btns">
               <button type="button" class="ghost" @click="emit('close')">Cancelar</button>
-              <button type="button" class="primary" :disabled="f.saving.value" @click="guardar">
+              <button type="button" class="primary" :disabled="f.saving.value || f.subiendoFoto.value" @click="guardar">
                 <BaseSpinner v-if="f.saving.value" :size="14" light />
                 Enviar pedido
               </button>
