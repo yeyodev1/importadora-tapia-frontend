@@ -1,14 +1,31 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useFacturaAdjuntosStore } from '@/stores/facturaAdjuntos'
 import { textoFactura, urlWhatsApp, numeroFactura } from '@/utils/compartirFactura'
 import type { FacturaCartera } from '@/types/erp'
 
-/** Botones para compartir una factura: WhatsApp (elige el contacto) y correo. */
-defineProps<{ factura: FacturaCartera; /** Solo íconos (dentro de la tabla de escritorio). */ compacto?: boolean }>()
-const emit = defineEmits<{ correo: [f: FacturaCartera] }>()
+/** Acciones por factura: foto de la factura física, WhatsApp (elige el contacto) y correo. */
+const props = defineProps<{ factura: FacturaCartera; /** Solo íconos (dentro de la tabla de escritorio). */ compacto?: boolean }>()
+const emit = defineEmits<{ correo: [f: FacturaCartera]; adjuntos: [f: FacturaCartera] }>()
+
+const adjuntos = useFacturaAdjuntosStore()
+const nArchivos = computed(() => adjuntos.porFactura.get(String(props.factura.trc_codigo))?.length || 0)
 </script>
 
 <template>
   <div class="share" :class="{ 'is-compacto': compacto }" @click.stop>
+    <button
+      type="button"
+      class="share__btn"
+      :class="{ 'has-files': nArchivos }"
+      :aria-label="`Foto de la factura ${numeroFactura(factura)}${nArchivos ? `, ${nArchivos} archivos` : ''}`"
+      :title="nArchivos ? `Ver foto de la factura (${nArchivos})` : 'Subir foto de la factura'"
+      @click="emit('adjuntos', factura)"
+    >
+      <i class="fa-solid fa-paperclip"></i>
+      <span>{{ nArchivos ? `Factura (${nArchivos})` : 'Foto factura' }}</span>
+      <b v-if="nArchivos" class="share__n" aria-hidden="true">{{ nArchivos }}</b>
+    </button>
     <a
       :href="urlWhatsApp(textoFactura(factura))"
       target="_blank"
@@ -34,10 +51,12 @@ const emit = defineEmits<{ correo: [f: FacturaCartera] }>()
 <style lang="scss" scoped>
 .share {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   justify-content: flex-end;
 
   &__btn {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -58,13 +77,22 @@ const emit = defineEmits<{ correo: [f: FacturaCartera] }>()
 
     i { font-size: 0.9rem; }
     &:hover { border-color: $primary; color: $primary; }
+    &.has-files { border-color: rgba($primary, 0.5); color: $primary; background: var(--accent-soft); }
     &.is-wa { color: #128c4b; &:hover { border-color: #25d366; background: rgba(#25d366, 0.08); } }
-
   }
+
+  &__n { display: none; }
 
   &.is-compacto {
     justify-content: center;
+
     .share__btn { width: 36px; padding: 0; span { display: none; } }
+
+    .share__n {
+      display: flex; align-items: center; justify-content: center;
+      position: absolute; top: -6px; right: -6px; min-width: 17px; height: 17px; padding: 0 4px;
+      border-radius: 999px; background: $primary; color: $white; font-size: 0.62rem; font-weight: 800;
+    }
   }
 }
 </style>
