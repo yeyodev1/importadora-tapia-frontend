@@ -46,5 +46,13 @@ export const usePedidosStore = defineStore('pedidos', {
       if (i >= 0) this.data[i] = pedido
       return pedido
     },
+
+    /** Bodega: marca la salida del pedido con fotos y observación. */
+    async marcarDespacho(id: string, payload: { fotos: string[]; observacion?: string }) {
+      const pedido = await pedidosService.marcarDespacho(id, payload)
+      const i = this.data.findIndex((p) => p._id === id)
+      if (i >= 0) this.data[i] = pedido
+      return pedido
+    },
   },
 })
