@@ -25,6 +25,7 @@ const eliminando = ref(false)
 
 const admins = computed(() => usersStore.data.filter((u) => u.role === 'admin'))
 const vendedores = computed(() => usersStore.data.filter((u) => u.role === 'vendedor'))
+const bodega = computed(() => usersStore.data.filter((u) => u.role === 'bodega'))
 
 function openCreate(venCodigo: string | null = null) {
   editing.value = null
@@ -104,6 +105,7 @@ async function eliminarConfirmado() {
       <section v-for="grupo in [
           { titulo: 'Administradores', lista: admins },
           { titulo: 'Vendedores', lista: vendedores },
+          { titulo: 'Bodega', lista: bodega },
         ]" :key="grupo.titulo" class="grupo">
         <h2>{{ grupo.titulo }} <small>{{ grupo.lista.length }}</small></h2>
 
