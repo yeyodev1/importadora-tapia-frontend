@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import SelectorArchivo from '@/components/ui/SelectorArchivo.vue'
 import RecortarImagen from '@/components/ui/RecortarImagen.vue'
 import { useRecorte } from '@/composables/useRecorte'
 import { subirArchivo } from '@/utils/subirDocumento'
@@ -23,10 +23,7 @@ const recorte = useRecorte()
 const esPdf = (url: string) => url.includes('/raw/')
 const miniatura = (url: string) => url.replace('/image/upload/', '/image/upload/c_fill,w_200,h_200/')
 
-async function onFiles(e: Event) {
-  const input = e.target as HTMLInputElement
-  const files = Array.from(input.files || [])
-  input.value = ''
+async function onFiles(files: File[]) {
   if (!files.length) return
   error.value = ''
   quitando.value = null
@@ -90,12 +87,12 @@ function confirmarQuitar(url: string) {
       ✅ {{ model.length }} foto{{ model.length === 1 ? '' : 's' }} de la OP · se enlazan al enviar el pedido. Toca una para verla.
     </p>
 
-    <label v-if="model.length < MAX" class="op__add" :class="{ 'is-busy': progreso, 'is-otra': model.length }">
-      <input type="file" accept="image/*,application/pdf" multiple :disabled="!!progreso" @change="onFiles" />
-      <BaseSpinner v-if="progreso" :size="16" />
-      <span v-else class="op__emoji" aria-hidden="true">{{ model.length ? '➕' : '📸' }}</span>
-      <span>{{ progreso || (model.length ? 'Tomar otra foto' : 'Tomar foto de la orden de pedido (OP)') }}</span>
-    </label>
+    <SelectorArchivo
+      v-if="model.length < MAX"
+      :progreso="progreso"
+      :texto-foto="model.length ? 'Tomar otra foto' : 'Tomar foto de la OP'"
+      @elegir="onFiles"
+    />
 
     <p v-if="error" class="op__err" role="alert">{{ error }}</p>
 
