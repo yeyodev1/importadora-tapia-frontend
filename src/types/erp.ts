@@ -215,3 +215,18 @@ export interface LoginResponse {
     venCodigo: string | null
   }
 }
+
+/** Foto o PDF de la factura física, ligada a una factura del ERP (trc_codigo). */
+export interface FacturaAdjunto {
+  _id: string
+  trcCodigo: string
+  numeroFactura: string
+  clienteNombre: string
+  url: string
+  nombre: string
+  formato: 'imagen' | 'pdf'
+  bytes: number
+  subidoPor: string
+  subidoPorId: string
+  createdAt: string
+}
