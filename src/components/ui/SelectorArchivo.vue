@@ -12,8 +12,10 @@ withDefaults(
     progreso?: string
     textoFoto?: string
     textoGaleria?: string
+    /** false = la galería solo acepta imágenes (p. ej. comprobante de cobro). */
+    pdf?: boolean
   }>(),
-  { progreso: '', textoFoto: 'Tomar foto', textoGaleria: 'Galería o PDF' },
+  { progreso: '', textoFoto: 'Tomar foto', textoGaleria: '', pdf: true },
 )
 const emit = defineEmits<{ elegir: [files: File[]] }>()
 
@@ -35,8 +37,8 @@ function onChange(e: Event) {
       <i class="fa-solid fa-camera" aria-hidden="true"></i> {{ textoFoto }}
     </label>
     <label class="sa__btn">
-      <input type="file" accept="image/*,application/pdf" multiple @change="onChange" />
-      <i class="fa-solid fa-images" aria-hidden="true"></i> {{ textoGaleria }}
+      <input type="file" :accept="pdf ? 'image/*,application/pdf' : 'image/*'" multiple @change="onChange" />
+      <i class="fa-solid fa-images" aria-hidden="true"></i> {{ textoGaleria || (pdf ? 'Galería o PDF' : 'Galería') }}
     </label>
   </div>
 </template>
