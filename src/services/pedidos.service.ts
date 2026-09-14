@@ -37,6 +37,13 @@ class PedidosService extends APIBase {
     return res.data.data
   }
 
+  /** Pedidos que cambiaron desde `desde` (alertas con sonido sin recargar). */
+  async novedades(desde?: string): Promise<{ data: Pedido[]; ahora: string }> {
+    const q = desde ? `?desde=${encodeURIComponent(desde)}` : ''
+    const res = await this.get<{ success: boolean; data: Pedido[]; ahora: string }>(`pedidos/novedades${q}`)
+    return { data: res.data.data, ahora: res.data.ahora }
+  }
+
   /** Bodega marca la salida (o, si ya salió, actualiza fotos y observación). */
   async marcarDespacho(id: string, payload: { fotos: string[]; observacion?: string }): Promise<Pedido> {
     const res = await this.patch<OneResponse>(`pedidos/${id}/despacho`, payload)
