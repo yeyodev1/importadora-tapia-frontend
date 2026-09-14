@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { useCobrosStore } from '@/stores/cobros'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import SignaturePad from '@/components/ui/SignaturePad.vue'
+import ClienteFacturaPicker from './ClienteFacturaPicker.vue'
 import { fileToCompressedDataUri } from '@/utils/image'
 import type { MetodoPago } from '@/types/erp'
 import type { ApiError } from '@/types'
@@ -18,6 +19,9 @@ const emit = defineEmits<{ close: []; saved: [] }>()
 const cobros = useCobrosStore()
 
 const cliente = ref('')
+/** Cliente del ERP elegido de la lista (obligatorio) y factura que paga (opcional). */
+const clienteCodigo = ref('')
+const facturaSel = ref('')
 const monto = ref<number | null>(null)
 const metodo = ref<MetodoPago>('efectivo')
 const observacion = ref('')
@@ -44,6 +48,8 @@ watch(
     if (!o) return
     error.value = ''
     cliente.value = props.clienteNombre || ''
+    clienteCodigo.value = props.clienteCodigo || ''
+    facturaSel.value = props.facturaRef || ''
     monto.value = null
     metodo.value = 'efectivo'
     observacion.value = ''
@@ -71,8 +77,12 @@ async function onFile(e: Event) {
 async function guardar() {
   if (saving.value) return
   error.value = ''
-  if (!cliente.value || !monto.value || monto.value <= 0) {
-    error.value = 'Indica el cliente y un monto válido.'
+  if (!clienteCodigo.value) {
+    error.value = 'Elige el cliente de la lista: el cobro debe ser a un cliente que ya exista.'
+    return
+  }
+  if (!monto.value || monto.value <= 0) {
+    error.value = 'Indica un monto válido.'
     return
   }
   if (requiereFoto() && !comprobante.value) {
@@ -83,8 +93,8 @@ async function guardar() {
   try {
     await cobros.create({
       clienteNombre: cliente.value,
-      clienteCodigo: props.clienteCodigo,
-      facturaRef: props.facturaRef,
+      clienteCodigo: clienteCodigo.value,
+      facturaRef: facturaSel.value || undefined,
       monto: Number(monto.value),
       metodoPago: metodo.value,
       comprobante: comprobante.value || tinyPlaceholder(),
@@ -121,21 +131,21 @@ function tinyPlaceholder() {
           </p>
 
           <form @submit.prevent="guardar">
-            <label class="fld">
-              <span>Cliente</span>
-              <input v-model="cliente" type="text" placeholder="Nombre del cliente" required />
-            </label>
-
-            <div class="grid2">
-              <label class="fld">
-                <span>Monto (USD)</span>
-                <input v-model.number="monto" type="number" step="0.01" min="0" placeholder="0.00" required />
-              </label>
-              <label class="fld">
-                <span>Factura (opcional)</span>
-                <input :value="facturaRef" type="text" placeholder="Serie-número" readonly />
-              </label>
+            <div class="fld">
+              <span>Cliente <em class="opt">· de tu cartera</em></span>
+              <ClienteFacturaPicker
+                v-model:codigo="clienteCodigo"
+                v-model:nombre="cliente"
+                v-model:factura="facturaSel"
+                :fijo="!!props.clienteCodigo"
+                @saldo="(n) => { if (!monto) monto = n }"
+              />
             </div>
+
+            <label class="fld">
+              <span>Monto (USD)</span>
+              <input id="cobro-monto" v-model.number="monto" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required />
+            </label>
 
             <div class="fld">
               <span>Método de pago</span>
@@ -221,7 +231,6 @@ function tinyPlaceholder() {
   }
 }
 form { display: flex; flex-direction: column; gap: 14px; }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .fld { display: flex; flex-direction: column; gap: 6px;
   span { font-family: $font-secondary; font-size: 0.74rem; font-weight: 600; color: var(--text-soft);
     em { font-style: normal; color: $alert-error; font-weight: 700; &.opt { color: var(--text-faint); } } }
