@@ -37,7 +37,7 @@ const deOtroDia = computed(() => !!enCurso.value && new Date(enCurso.value.entra
 
 <template>
   <div v-if="enCurso" class="visita-banner" :class="{ 'is-vieja': deOtroDia }" role="status">
-    <span class="visita-banner__icono" aria-hidden="true">{{ deOtroDia ? '⚠️' : '📍' }}</span>
+    <i class="fa-solid visita-banner__icono" :class="deOtroDia ? 'fa-triangle-exclamation' : 'fa-location-dot'" aria-hidden="true"></i>
     <p class="visita-banner__txt">
       <strong>{{ deOtroDia ? 'Olvidaste marcar la salida' : 'Visita en curso' }}</strong>
       {{ enCurso.clienteNombre || 'Cliente sin nombre' }} · {{ desde }}
@@ -62,9 +62,10 @@ const deOtroDia = computed(() => !!enCurso.value && new Date(enCurso.value.entra
   &.is-vieja {
     background: $alert-warning-bg;
     border-bottom-color: rgba($alert-warning, 0.4);
+    .visita-banner__icono { color: darken($alert-warning, 12%); }
   }
 
-  &__icono { font-size: 1.1rem; }
+  &__icono { font-size: 1.1rem; color: $primary; }
 
   &__txt {
     flex: 1 1 180px;
