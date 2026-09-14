@@ -4,8 +4,11 @@ import { useErpStore } from '@/stores/erp'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import DataTable, { type Column } from '@/components/ui/DataTable.vue'
+import FacturaCompartir from './cartera/FacturaCompartir.vue'
+import EnviarFacturaModal from './cartera/EnviarFacturaModal.vue'
 import { formatMoney, formatDate, formatNumFactura } from '@/utils/format'
 import { esVencida, tienePlazo, estadoCartera, estaPagada, etiquetaEstado, haceDias, ESTADO_CARTERA_BADGE } from '@/utils/cartera'
+import type { FacturaCartera } from '@/types/erp'
 
 const erp = useErpStore()
 onMounted(() => erp.fetchCarteraFacturas())
@@ -44,10 +47,13 @@ const columns: Column[] = [
   { key: 'trc_totfact', label: 'Total', align: 'right', sortable: true },
   { key: 'total_abonado', label: 'Abonado', align: 'right' },
   { key: 'saldo_pendiente', label: 'Saldo', align: 'right', sortable: true },
-  { key: 'estado_factura', label: 'Estado', align: 'center' },
+  { key: 'estado_factura', label: 'Estado · compartir', align: 'center' },
 ]
 
 const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length : null))
+
+/** Factura elegida para enviar por correo (abre el modal). */
+const porCorreo = ref<FacturaCartera | null>(null)
 </script>
 
 <template>
@@ -122,9 +128,12 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
       </template>
 
       <template #cell-estado_factura="{ row }">
-        <BaseBadge :tone="ESTADO_CARTERA_BADGE[estadoCartera(row)].tone">
-          {{ etiquetaEstado(row) }}
-        </BaseBadge>
+        <div class="estado-cell">
+          <BaseBadge :tone="ESTADO_CARTERA_BADGE[estadoCartera(row)].tone">
+            {{ etiquetaEstado(row) }}
+          </BaseBadge>
+          <FacturaCompartir compacto :factura="row" @correo="(f) => (porCorreo = f)" />
+        </div>
       </template>
 
       <template #mobile-card="{ row }">
@@ -145,151 +154,15 @@ const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length 
             <span>Abonado <b>{{ formatMoney(row.total_abonado) }}</b></span>
             <span class="is-saldo">Saldo <b>{{ formatMoney(row.saldo_pendiente) }}</b></span>
           </div>
+          <FacturaCompartir class="mcard__share" :factura="row" @correo="(f) => (porCorreo = f)" />
         </div>
       </template>
     </DataTable>
+
+    <EnviarFacturaModal :open="!!porCorreo" :factura="porCorreo" @close="porCorreo = null" />
   </div>
 </template>
 
 <style lang="scss" scoped>
-.filters {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-
-  &__btn {
-    padding: 7px 13px;
-    border: 1px solid var(--border-strong);
-    border-radius: 999px;
-    background: var(--surface);
-    font-family: $font-secondary;
-    font-size: 0.74rem;
-    font-weight: 600;
-    color: var(--text-soft);
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-      border-color: $primary;
-      color: $primary;
-    }
-
-    &.is-active {
-      background: $primary;
-      border-color: $primary;
-      color: $white;
-    }
-
-    &.is-danger.is-active {
-      background: $alert-error;
-      border-color: $alert-error;
-    }
-  }
-
-  &__total {
-    margin-left: 8px;
-    font-family: $font-secondary;
-    font-size: 0.76rem;
-    color: var(--text-soft);
-
-    strong {
-      color: var(--text);
-      font-variant-numeric: tabular-nums;
-    }
-  }
-}
-
-.invoice-client {
-  strong {
-    display: block;
-    font-weight: 600;
-  }
-
-  small {
-    font-size: 0.68rem;
-    color: var(--text-faint);
-  }
-}
-
-.doc {
-  font-family: $font-secondary;
-  font-size: 0.76rem;
-  font-weight: 600;
-  color: var(--text-soft);
-  background: rgba($primary-dark, 0.05);
-  border-radius: 5px;
-  padding: 2px 7px;
-}
-
-.docwrap {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-
-  .serie {
-    font-family: $font-secondary;
-    font-size: 0.64rem;
-    color: var(--text-faint);
-  }
-}
-
-.faint {
-  color: var(--text-faint);
-}
-
-.saldo {
-  font-weight: 700;
-
-  &.is-zero {
-    color: var(--text-faint);
-    font-weight: 500;
-  }
-}
-
-.mcard {
-  font-family: $font-secondary;
-
-  &__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-
-    strong {
-      font-size: 0.84rem;
-      font-weight: 700;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
-
-  &__doc {
-    margin-top: 6px;
-    font-size: 0.74rem;
-    color: var(--text-soft);
-  }
-
-  &__amounts {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    margin-top: 10px;
-    font-size: 0.7rem;
-    color: var(--text-faint);
-
-    b {
-      display: block;
-      font-size: 0.82rem;
-      color: var(--text);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .is-saldo b {
-      color: darken($alert-error, 8%);
-    }
-  }
-}
+@use './cartera/cartera-facturas';
 </style>
