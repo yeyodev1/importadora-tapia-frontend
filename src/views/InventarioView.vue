@@ -15,7 +15,7 @@ const asignacion = ref<AsignacionInventario | null>(null)
 
 onMounted(async () => {
   erp.fetchInventario()
-  if (!userStore.isAdmin) {
+  if (userStore.isVendedor) {
     try {
       asignacion.value = await erpService.miAsignacionInventario()
     } catch {
