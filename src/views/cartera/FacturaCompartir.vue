@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useFacturaAdjuntosStore } from '@/stores/facturaAdjuntos'
-import { textoFactura, urlWhatsApp, numeroFactura } from '@/utils/compartirFactura'
+import { numeroFactura } from '@/utils/compartirFactura'
+import WhatsAppOpciones from './WhatsAppOpciones.vue'
 import type { FacturaCartera } from '@/types/erp'
 
-/** Acciones por factura: foto de la factura física, WhatsApp (elige el contacto) y correo. */
+/** Acciones por factura: foto de la factura física, WhatsApp (elige qué enviar) y correo. */
 const props = defineProps<{ factura: FacturaCartera; /** Solo íconos (dentro de la tabla de escritorio). */ compacto?: boolean }>()
 const emit = defineEmits<{ correo: [f: FacturaCartera]; adjuntos: [f: FacturaCartera] }>()
 
 const adjuntos = useFacturaAdjuntosStore()
 const nArchivos = computed(() => adjuntos.porFactura.get(String(props.factura.trc_codigo))?.length || 0)
+
+/** Pregunta si enviar solo esta factura o todo lo que debe el cliente. */
+const waOpen = ref(false)
 </script>
 
 <template>
@@ -26,16 +30,15 @@ const nArchivos = computed(() => adjuntos.porFactura.get(String(props.factura.tr
       <span>{{ nArchivos ? `Factura (${nArchivos})` : 'Foto factura' }}</span>
       <b v-if="nArchivos" class="share__n" aria-hidden="true">{{ nArchivos }}</b>
     </button>
-    <a
-      :href="urlWhatsApp(textoFactura(factura))"
-      target="_blank"
-      rel="noopener"
+    <button
+      type="button"
       class="share__btn is-wa"
       :aria-label="`Compartir factura ${numeroFactura(factura)} por WhatsApp`"
       title="Compartir por WhatsApp"
+      @click="waOpen = true"
     >
       <i class="fa-brands fa-whatsapp"></i><span>WhatsApp</span>
-    </a>
+    </button>
     <button
       type="button"
       class="share__btn"
@@ -45,6 +48,8 @@ const nArchivos = computed(() => adjuntos.porFactura.get(String(props.factura.tr
     >
       <i class="fa-solid fa-envelope"></i><span>Correo</span>
     </button>
+
+    <WhatsAppOpciones :open="waOpen" :factura="factura" @close="waOpen = false" />
   </div>
 </template>
 
