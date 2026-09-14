@@ -156,6 +156,8 @@ export interface Pedido {
   /** Plazo de crédito en días (0 = contado). Pedidos viejos pueden no traerlo. */
   plazoCreditoDias?: number
   fotoUrl?: string
+  /** Todas las fotos de la orden de pedido (fotoUrl es la primera). */
+  fotos?: string[]
   observacion?: string
   motivoRechazo?: string
   estado: EstadoPedido
@@ -167,7 +169,8 @@ export interface NuevoPedido {
   clienteCodigo?: string
   plazoCreditoDias: number
   items: Omit<PedidoItem, 'subtotal'>[]
-  foto?: string
+  /** Fotos de la orden de pedido (OP) ya subidas a Cloudinary. */
+  fotos?: string[]
   observacion?: string
 }
 
