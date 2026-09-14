@@ -38,5 +38,13 @@ export const usePedidosStore = defineStore('pedidos', {
       if (i >= 0) this.data[i] = pedido
       return pedido
     },
+
+    /** Guarda las fotos de la OP de un pedido ya enviado. */
+    async setFotos(id: string, fotos: string[]) {
+      const pedido = await pedidosService.setFotos(id, fotos)
+      const i = this.data.findIndex((p) => p._id === id)
+      if (i >= 0) this.data[i] = pedido
+      return pedido
+    },
   },
 })
