@@ -79,6 +79,19 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: 'Cobros' },
       },
       {
+        path: 'solicitudes',
+        name: 'Solicitudes',
+        component: () => import('../views/SolicitudesView.vue'),
+        meta: { title: 'Solicitudes de crédito' },
+      },
+      {
+        // "nueva" crea; cualquier otro valor abre una existente (misma vista, sin remontar al guardar).
+        path: 'solicitudes/:id',
+        name: 'Solicitud',
+        component: () => import('../views/SolicitudFormView.vue'),
+        meta: { title: 'Solicitud de crédito' },
+      },
+      {
         path: 'me',
         name: 'Perfil',
         component: () => import('../views/PerfilView.vue'),
