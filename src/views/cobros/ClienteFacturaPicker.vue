@@ -67,7 +67,7 @@ function elegirFactura(f: FacturaCartera) {
 <template>
   <div class="cfp">
     <div v-if="codigo" class="cfp__elegido">
-      <span class="cfp__check" aria-hidden="true">✅</span>
+      <i class="fa-solid fa-circle-check cfp__check" aria-hidden="true"></i>
       <span class="cfp__txt">
         <strong>{{ nombre }}</strong>
         <small>Código {{ codigo }}</small>
@@ -122,7 +122,7 @@ function elegirFactura(f: FacturaCartera) {
           :aria-pressed="factura === numeroFactura(f)"
           @click="elegirFactura(f)"
         >
-          <strong>🧾 {{ numeroFactura(f) }} · saldo {{ formatMoney(f.saldo_pendiente) }}</strong>
+          <strong><i class="fa-solid fa-file-invoice" aria-hidden="true"></i> {{ numeroFactura(f) }} · saldo {{ formatMoney(f.saldo_pendiente) }}</strong>
           <small>{{ etiquetaEstado(f) }}</small>
         </button>
       </template>
@@ -165,7 +165,7 @@ function elegirFactura(f: FacturaCartera) {
     display: flex; align-items: center; gap: 10px; padding: 10px 12px;
     border: 1.5px solid rgba($secondary, 0.6); border-radius: 10px; background: rgba($secondary, 0.06);
   }
-  &__check { font-size: 1.1rem; }
+  &__check { font-size: 1.1rem; color: darken($secondary, 8%); }
   &__txt {
     flex: 1; min-width: 0; display: flex; flex-direction: column;
     strong { font-size: 0.88rem; font-weight: 800; }
