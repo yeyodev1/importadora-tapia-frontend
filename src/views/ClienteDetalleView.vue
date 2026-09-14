@@ -6,6 +6,7 @@ import { useUserStore } from '@/stores/user'
 import { ref } from 'vue'
 import ClienteResumenCredito from './cliente/ClienteResumenCredito.vue'
 import ClienteFacturasTabla from './cliente/ClienteFacturasTabla.vue'
+import ClienteSolicitudes from './cliente/ClienteSolicitudes.vue'
 import CobroFormModal from './cobros/CobroFormModal.vue'
 import PedidoFormModal from './pedidos/PedidoFormModal.vue'
 import { initials } from '@/utils/format'
@@ -92,6 +93,8 @@ const pedidoOpen = ref(false)
         :max-facturas="MAX_FACTURAS"
       />
 
+      <ClienteSolicitudes class="bloque" :codigo="cliente.per_codigo" />
+
       <h2 class="seccion">
         Facturas con saldo pendiente <small>{{ facturas.length }}</small>
         <SourceTag source="erp" :updated-at="erp.carteraFacturas.fetchedAt" />
@@ -126,167 +129,5 @@ const pedidoOpen = ref(false)
 </template>
 
 <style lang="scss" scoped>
-.volver {
-  margin-bottom: 14px;
-  padding: 7px 14px;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  background: var(--surface);
-  font-family: $font-principal;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text);
-  cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease;
-
-  &:hover {
-    border-color: $primary;
-    color: $primary;
-  }
-}
-
-.hero {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-card);
-  padding: 20px;
-  margin-bottom: 16px;
-
-  &--skeleton {
-    align-items: center;
-  }
-
-  &__avatar {
-    display: grid;
-    place-items: center;
-    width: 54px;
-    height: 54px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    background: var(--accent-soft);
-    color: $primary;
-    font-size: 1rem;
-    font-weight: 800;
-  }
-
-  &__info {
-    flex: 1;
-    min-width: 0;
-
-    h1 {
-      font-size: 1.15rem;
-      font-weight: 800;
-      letter-spacing: -0.01em;
-    }
-  }
-
-  &__id,
-  &__dir,
-  &__vendedor {
-    margin-top: 3px;
-    font-family: $font-secondary;
-    font-size: 0.78rem;
-    color: var(--text-soft);
-
-    b {
-      color: var(--text);
-    }
-  }
-
-  &__actions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    a, button {
-      text-align: center;
-      padding: 8px 22px;
-      border-radius: 8px;
-      background: var(--accent-soft);
-      color: $primary;
-      font-family: $font-secondary;
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-decoration: none;
-      border: none;
-      cursor: pointer;
-      transition: background 0.2s ease;
-
-      &:hover {
-        background: rgba($primary, 0.2);
-      }
-    }
-
-    .is-cobro {
-      background: $secondary;
-      color: $white;
-
-      &:hover {
-        background: darken($secondary, 6%);
-      }
-    }
-
-    .is-pedido {
-      background: $primary;
-      color: $white;
-
-      &:hover {
-        background: darken($primary, 6%);
-      }
-    }
-  }
-
-  @media (max-width: 640px) {
-    flex-wrap: wrap;
-
-    &__actions {
-      flex-direction: row;
-      width: 100%;
-
-      a {
-        flex: 1;
-      }
-    }
-  }
-}
-
-.bloque {
-  margin-bottom: 20px;
-}
-
-.seccion {
-  font-size: 0.95rem;
-  font-weight: 800;
-  margin-bottom: 12px;
-
-  small {
-    font-family: $font-secondary;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: $primary;
-    background: var(--accent-soft);
-    border-radius: 999px;
-    padding: 2px 8px;
-    margin-left: 6px;
-  }
-}
-
-.no-encontrado {
-  text-align: center;
-  padding: 60px 20px;
-  font-family: $font-secondary;
-  font-size: 0.85rem;
-  color: var(--text-soft);
-
-  a {
-    display: inline-block;
-    margin-top: 12px;
-    color: $primary;
-    font-weight: 700;
-  }
-}
+@use './cliente/cliente-detalle';
 </style>
