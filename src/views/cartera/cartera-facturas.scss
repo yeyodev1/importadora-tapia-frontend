@@ -1,0 +1,156 @@
+@use "@/styles/index.scss" as *;
+// Estilos de CarteraFacturasView (separados para mantener la vista bajo 300 líneas).
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+
+  &__btn {
+    padding: 7px 13px;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    background: var(--surface);
+    font-family: $font-secondary;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--text-soft);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: $primary;
+      color: $primary;
+    }
+
+    &.is-active {
+      background: $primary;
+      border-color: $primary;
+      color: $white;
+    }
+
+    &.is-danger.is-active {
+      background: $alert-error;
+      border-color: $alert-error;
+    }
+  }
+
+  &__total {
+    margin-left: 8px;
+    font-family: $font-secondary;
+    font-size: 0.76rem;
+    color: var(--text-soft);
+
+    strong {
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+}
+
+.invoice-client {
+  strong {
+    display: block;
+    font-weight: 600;
+  }
+
+  small {
+    font-size: 0.68rem;
+    color: var(--text-faint);
+  }
+}
+
+.doc {
+  font-family: $font-secondary;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  background: rgba($primary-dark, 0.05);
+  border-radius: 5px;
+  padding: 2px 7px;
+}
+
+.docwrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .serie {
+    font-family: $font-secondary;
+    font-size: 0.64rem;
+    color: var(--text-faint);
+  }
+}
+
+.faint {
+  color: var(--text-faint);
+}
+
+.estado-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.saldo {
+  font-weight: 700;
+
+  &.is-zero {
+    color: var(--text-faint);
+    font-weight: 500;
+  }
+}
+
+.mcard {
+  font-family: $font-secondary;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+
+    strong {
+      font-size: 0.84rem;
+      font-weight: 700;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  &__doc {
+    margin-top: 6px;
+    font-size: 0.74rem;
+    color: var(--text-soft);
+  }
+
+  &__amounts {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 0.7rem;
+    color: var(--text-faint);
+
+    b {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .is-saldo b {
+      color: darken($alert-error, 8%);
+    }
+  }
+
+  &__share {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+}
