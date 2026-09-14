@@ -82,7 +82,7 @@ export interface ErpListResponse<T> {
   data: T[]
 }
 
-export type UserRole = 'admin' | 'vendedor'
+export type UserRole = 'admin' | 'vendedor' | 'bodega'
 
 /** Vendedor del ERP que ya no trabaja con Tapia: se oculta en la app. */
 export interface VendedorOculto {
@@ -158,6 +158,8 @@ export interface Pedido {
   fotoUrl?: string
   /** Todas las fotos de la orden de pedido (fotoUrl es la primera). */
   fotos?: string[]
+  /** Salida de bodega (hora del servidor, fotos y quién la marcó). */
+  despacho?: { salidaAt: string; fotos: string[]; observacion?: string; despachadoPor: string }
   observacion?: string
   motivoRechazo?: string
   estado: EstadoPedido
