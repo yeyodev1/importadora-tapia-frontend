@@ -33,7 +33,7 @@ async function guardar() {
         <div class="sheet" role="dialog" aria-modal="true">
           <header class="sheet__head">
             <h2>Nuevo pedido</h2>
-            <button class="sheet__x" type="button" aria-label="Cerrar" @click="emit('close')">✕</button>
+            <button class="sheet__x" type="button" aria-label="Cerrar" @click="emit('close')"><i class="fa-solid fa-xmark"></i></button>
           </header>
           <p class="sheet__note">
             El pedido se envía a administración para aprobación. No emite factura; Tapia lo
