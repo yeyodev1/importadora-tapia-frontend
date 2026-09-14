@@ -7,6 +7,7 @@ import BaseBadge from '@/components/ui/BaseBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonTable from '@/components/ui/SkeletonTable.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import SalidaVisitaModal from './visitas/SalidaVisitaModal.vue'
 import { formatDate } from '@/utils/format'
 import type { ResultadoVisita } from '@/types/erp'
 
@@ -35,18 +36,25 @@ async function llegar() {
   }
 }
 
-async function salir(resultado: ResultadoVisita) {
+/** Resultado elegido: abre el modal que confirma la salida (con observación opcional). */
+const salidaResultado = ref<ResultadoVisita | null>(null)
+const salidaError = ref('')
+
+function pedirSalida(resultado: ResultadoVisita) {
   if (trabajando.value || !enCurso.value) return
-  error.value = ''
+  salidaError.value = ''
+  salidaResultado.value = resultado
+}
+
+async function salir(obs?: string) {
+  if (trabajando.value || !enCurso.value || !salidaResultado.value) return
+  salidaError.value = ''
   trabajando.value = true
   try {
-    let obs: string | undefined
-    if (resultado !== 'atendido') {
-      obs = window.prompt('Observación (opcional):') || undefined
-    }
-    await visitas.marcarSalida(enCurso.value._id, resultado, obs)
+    await visitas.marcarSalida(enCurso.value._id, salidaResultado.value, obs)
+    salidaResultado.value = null
   } catch (e) {
-    error.value = (e as Error).message
+    salidaError.value = (e as { message?: string })?.message || 'No se pudo marcar la salida. Vuelve a intentar.'
   } finally {
     trabajando.value = false
   }
@@ -106,12 +114,12 @@ function mapUrl(lat: number, lng: number) {
           <strong>{{ enCurso.clienteNombre || 'Cliente sin nombre' }}</strong>
           <small>Llegaste a las {{ hora(enCurso.entrada.ts) }}</small>
         </div>
-        <p class="accion__salida-lbl">Marca tu salida:</p>
+        <p class="accion__salida-lbl">Al terminar, marca tu salida:</p>
         <div class="accion__salidas">
-          <button type="button" class="s ok" :disabled="trabajando" @click="salir('atendido')">Atendido</button>
-          <button type="button" class="s wa" :disabled="trabajando" @click="salir('espera')">Esperó</button>
-          <button type="button" class="s ne" :disabled="trabajando" @click="salir('regreso')">Regresar</button>
-          <button type="button" class="s da" :disabled="trabajando" @click="salir('abandono')">No atendido</button>
+          <button type="button" class="s ok" :disabled="trabajando" @click="pedirSalida('atendido')">✅ Atendido</button>
+          <button type="button" class="s wa" :disabled="trabajando" @click="pedirSalida('espera')">⏳ Esperó</button>
+          <button type="button" class="s ne" :disabled="trabajando" @click="pedirSalida('regreso')">🔁 Regresar</button>
+          <button type="button" class="s da" :disabled="trabajando" @click="pedirSalida('abandono')">🚫 No atendido</button>
         </div>
       </template>
 
@@ -158,6 +166,15 @@ function mapUrl(lat: number, lng: number) {
         </div>
       </li>
     </ul>
+
+    <SalidaVisitaModal
+      :resultado="salidaResultado"
+      :cliente="enCurso?.clienteNombre || ''"
+      :loading="trabajando"
+      :error="salidaError"
+      @cancel="salidaResultado = null"
+      @confirm="salir"
+    />
   </div>
 </template>
 
