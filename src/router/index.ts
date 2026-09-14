@@ -92,6 +92,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: 'Solicitud de crédito' },
       },
       {
+        path: 'bodega',
+        name: 'Despachos',
+        component: () => import('../views/DespachosView.vue'),
+        meta: { title: 'Despachos', roles: ['admin', 'bodega'] },
+      },
+      {
         path: 'me',
         name: 'Perfil',
         component: () => import('../views/PerfilView.vue'),
@@ -129,8 +135,19 @@ router.beforeEach((to, _from, next) => {
     return next({ path: '/', replace: true })
   }
 
+  const rol = localStorage.getItem('user_role')
+  // Bodega solo usa Despachos, Inventario y su perfil.
+  if (hasToken && rol === 'bodega' && !['/bodega', '/inventario', '/me'].includes(to.path)) {
+    return next({ path: '/bodega', replace: true })
+  }
+
   const adminOnly = to.matched.some((record) => record.meta?.adminOnly)
-  if (adminOnly && localStorage.getItem('user_role') !== 'admin') {
+  if (adminOnly && rol !== 'admin') {
+    return next({ path: '/', replace: true })
+  }
+
+  const roles = to.matched.flatMap((record) => (record.meta?.roles as string[] | undefined) || [])
+  if (roles.length && !roles.includes(rol || '')) {
     return next({ path: '/', replace: true })
   }
 
