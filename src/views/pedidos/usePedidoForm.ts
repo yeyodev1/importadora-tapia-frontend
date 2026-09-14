@@ -113,7 +113,18 @@ export function usePedidoForm() {
       return false
     }
     if (!lineas.value.length) {
-      error.value = 'Agrega al menos un producto.'
+      error.value = 'Selecciona al menos un producto del inventario: sin productos el pedido no se envía.'
+      return false
+    }
+    // Cada producto con cantidad y precio: así se reserva el stock y el total es real.
+    const sinCantidad = lineas.value.find((l) => !(Number(l.cantidad) > 0))
+    if (sinCantidad) {
+      error.value = `${sinCantidad.productoNombre}: indica la cantidad.`
+      return false
+    }
+    const sinPrecio = lineas.value.find((l) => !(Number(l.precioUnitario) > 0))
+    if (sinPrecio) {
+      error.value = `${sinPrecio.productoNombre}: indica el precio unitario.`
       return false
     }
     if (conflictoContado.value) {
