@@ -83,6 +83,11 @@ class ErpService extends APIBase {
     return res.data.data
   }
 
+  /** Envía el saldo de una factura por correo (sale desde app@importadoratapia.app). */
+  async enviarFacturaCorreo(trcCodigo: string, para: string, mensaje?: string): Promise<void> {
+    await this.post(`erp/cartera/facturas/${encodeURIComponent(trcCodigo)}/enviar`, { para, mensaje })
+  }
+
   async getCarteraConsolidada(): Promise<CarteraConsolidada[]> {
     const res = await this.get<ErpListResponse<CarteraConsolidada>>('erp/cartera/consolidada')
     return res.data.data
