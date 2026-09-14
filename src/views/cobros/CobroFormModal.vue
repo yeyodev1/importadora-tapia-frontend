@@ -123,7 +123,7 @@ function tinyPlaceholder() {
         <div class="sheet" role="dialog" aria-modal="true">
           <header class="sheet__head">
             <h2>Registrar cobro</h2>
-            <button class="sheet__x" type="button" aria-label="Cerrar" @click="emit('close')">✕</button>
+            <button class="sheet__x" type="button" aria-label="Cerrar" @click="emit('close')"><i class="fa-solid fa-xmark"></i></button>
           </header>
           <p class="sheet__note">
             Este registro no emite factura ni modifica el ERP. Queda como respaldo para que
