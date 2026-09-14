@@ -1,17 +1,23 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
 import { useErpStore } from '@/stores/erp'
+import { useFacturaAdjuntosStore } from '@/stores/facturaAdjuntos'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import DataTable, { type Column } from '@/components/ui/DataTable.vue'
 import FacturaCompartir from './cartera/FacturaCompartir.vue'
 import EnviarFacturaModal from './cartera/EnviarFacturaModal.vue'
+import FacturaAdjuntosModal from './cartera/FacturaAdjuntosModal.vue'
 import { formatMoney, formatDate, formatNumFactura } from '@/utils/format'
 import { esVencida, tienePlazo, estadoCartera, estaPagada, etiquetaEstado, haceDias, ESTADO_CARTERA_BADGE } from '@/utils/cartera'
 import type { FacturaCartera } from '@/types/erp'
 
 const erp = useErpStore()
-onMounted(() => erp.fetchCarteraFacturas())
+const adjuntos = useFacturaAdjuntosStore()
+onMounted(() => {
+  erp.fetchCarteraFacturas()
+  adjuntos.fetch(true)
+})
 
 // La vista del ERP es de cuentas por cobrar: sólo trae facturas con saldo.
 // Las ya pagadas no llegan, así que no hay filtro "Pagadas".
@@ -47,13 +53,14 @@ const columns: Column[] = [
   { key: 'trc_totfact', label: 'Total', align: 'right', sortable: true },
   { key: 'total_abonado', label: 'Abonado', align: 'right' },
   { key: 'saldo_pendiente', label: 'Saldo', align: 'right', sortable: true },
-  { key: 'estado_factura', label: 'Estado · compartir', align: 'center' },
+  { key: 'estado_factura', label: 'Estado · factura', align: 'center' },
 ]
 
 const count = computed(() => (erp.carteraFacturas.fetchedAt ? rows.value.length : null))
 
-/** Factura elegida para enviar por correo (abre el modal). */
+/** Factura elegida para enviar por correo o para ver/subir su foto. */
 const porCorreo = ref<FacturaCartera | null>(null)
+const conFotos = ref<FacturaCartera | null>(null)
 </script>
 
 <template>
@@ -132,7 +139,7 @@ const porCorreo = ref<FacturaCartera | null>(null)
           <BaseBadge :tone="ESTADO_CARTERA_BADGE[estadoCartera(row)].tone">
             {{ etiquetaEstado(row) }}
           </BaseBadge>
-          <FacturaCompartir compacto :factura="row" @correo="(f) => (porCorreo = f)" />
+          <FacturaCompartir compacto :factura="row" @correo="(f) => (porCorreo = f)" @adjuntos="(f) => (conFotos = f)" />
         </div>
       </template>
 
@@ -154,12 +161,13 @@ const porCorreo = ref<FacturaCartera | null>(null)
             <span>Abonado <b>{{ formatMoney(row.total_abonado) }}</b></span>
             <span class="is-saldo">Saldo <b>{{ formatMoney(row.saldo_pendiente) }}</b></span>
           </div>
-          <FacturaCompartir class="mcard__share" :factura="row" @correo="(f) => (porCorreo = f)" />
+          <FacturaCompartir class="mcard__share" :factura="row" @correo="(f) => (porCorreo = f)" @adjuntos="(f) => (conFotos = f)" />
         </div>
       </template>
     </DataTable>
 
     <EnviarFacturaModal :open="!!porCorreo" :factura="porCorreo" @close="porCorreo = null" />
+    <FacturaAdjuntosModal :open="!!conFotos" :factura="conFotos" @close="conFotos = null" />
   </div>
 </template>
 
