@@ -34,7 +34,7 @@ class UsersService extends APIBase {
 
   async update(
     id: string,
-    payload: Partial<Pick<CreateUserPayload, 'password' | 'name' | 'venCodigo'>>,
+    payload: Partial<Pick<CreateUserPayload, 'email' | 'password' | 'name' | 'venCodigo'>>,
   ): Promise<AppUser> {
     const res = await this.patch<UserResponse>(`users/${id}`, payload)
     return res.data.data
