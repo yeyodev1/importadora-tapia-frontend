@@ -17,8 +17,8 @@ defineEmits<{ edit: []; remove: [] }>()
         <strong>{{ user.name }}</strong>
         <small>{{ user.email }}</small>
       </div>
-      <BaseBadge :tone="user.role === 'admin' ? 'info' : 'success'">
-        {{ user.role === 'admin' ? 'Admin' : 'Vendedor' }}
+      <BaseBadge :tone="user.role === 'admin' ? 'info' : user.role === 'bodega' ? 'warning' : 'success'">
+        {{ user.role === 'admin' ? 'Admin' : user.role === 'bodega' ? 'Bodega' : 'Vendedor' }}
       </BaseBadge>
     </div>
 
