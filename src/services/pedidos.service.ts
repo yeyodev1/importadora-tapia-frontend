@@ -1,5 +1,6 @@
 import APIBase from './httpBase'
 import type { Pedido, NuevoPedido } from '@/types/erp'
+import type { FirmaSubida } from '@/types/solicitudes'
 
 interface ListResponse {
   success: boolean
@@ -27,6 +28,12 @@ class PedidosService extends APIBase {
     motivoRechazo?: string,
   ): Promise<Pedido> {
     const res = await this.patch<OneResponse>(`pedidos/${id}/estado`, { estado, motivoRechazo })
+    return res.data.data
+  }
+
+  /** Firma para subir la foto de la orden de pedido (OP) directo a Cloudinary. */
+  async firmaSubida(): Promise<FirmaSubida> {
+    const res = await this.post<{ success: boolean; data: FirmaSubida }>('pedidos/firma-subida', {})
     return res.data.data
   }
 }
