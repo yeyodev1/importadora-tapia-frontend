@@ -32,11 +32,11 @@ function onChange(e: Event) {
   <div v-else class="sa">
     <label class="sa__btn is-foto">
       <input type="file" accept="image/*" capture="environment" @change="onChange" />
-      <span aria-hidden="true">📸</span> {{ textoFoto }}
+      <i class="fa-solid fa-camera" aria-hidden="true"></i> {{ textoFoto }}
     </label>
     <label class="sa__btn">
       <input type="file" accept="image/*,application/pdf" multiple @change="onChange" />
-      <span aria-hidden="true">🖼️</span> {{ textoGaleria }}
+      <i class="fa-solid fa-images" aria-hidden="true"></i> {{ textoGaleria }}
     </label>
   </div>
 </template>
@@ -79,7 +79,7 @@ function onChange(e: Event) {
     transition: background 0.2s ease;
 
     input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-    span { font-size: 1.1rem; }
+    i { font-size: 1rem; }
     &:hover { background: var(--accent-soft); }
     &:focus-within { box-shadow: 0 0 0 3px rgba($primary, 0.25); }
 
