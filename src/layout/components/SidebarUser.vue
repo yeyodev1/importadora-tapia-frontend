@@ -18,7 +18,7 @@ function logout() {
       <span class="user-footer__avatar">{{ initials(userStore.name || userStore.email) }}</span>
       <div class="user-footer__info">
         <strong>{{ userStore.name || 'Usuario' }}</strong>
-        <small>{{ userStore.isAdmin ? 'Administrador' : 'Vendedor' }}</small>
+        <small>{{ userStore.isAdmin ? 'Administrador' : userStore.isBodega ? 'Bodega' : 'Vendedor' }}</small>
       </div>
     </div>
     <button class="user-footer__logout" type="button" title="Cerrar sesión" @click="logout">
