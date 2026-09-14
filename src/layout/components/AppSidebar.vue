@@ -15,6 +15,8 @@ interface NavItem {
   label: string
   icon: string
   adminOnly?: boolean
+  /** Si se indica, solo esos roles ven el enlace. */
+  roles?: string[]
 }
 
 // Clases FontAwesome (CDN cargado en index.html)
@@ -33,6 +35,7 @@ const icons: Record<string, string> = {
   user: 'fa-circle-user',
   usersGear: 'fa-users-gear',
   fileSign: 'fa-file-signature',
+  truck: 'fa-truck-ramp-box',
 }
 
 const allSections: { title: string; items: NavItem[] }[] = [
@@ -50,7 +53,10 @@ const allSections: { title: string; items: NavItem[] }[] = [
   },
   {
     title: 'Operación',
-    items: [{ to: '/inventario', label: 'Inventario', icon: 'box' }],
+    items: [
+      { to: '/bodega', label: 'Despachos', icon: 'truck', roles: ['admin', 'bodega'] },
+      { to: '/inventario', label: 'Inventario', icon: 'box' },
+    ],
   },
   {
     title: 'Operación comercial',
@@ -82,7 +88,12 @@ const sections = computed(() =>
   allSections
     .map((s) => ({
       ...s,
-      items: s.items.filter((i) => !i.adminOnly || userStore.isAdmin),
+      items: s.items.filter((i) => {
+        // Bodega solo ve Despachos, Inventario y su perfil.
+        if (userStore.isBodega) return ['/bodega', '/inventario', '/me'].includes(i.to)
+        if (i.roles && !i.roles.includes(userStore.role || '')) return false
+        return !i.adminOnly || userStore.isAdmin
+      }),
     }))
     .filter((s) => s.items.length),
 )
