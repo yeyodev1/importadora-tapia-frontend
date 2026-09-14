@@ -84,7 +84,7 @@ function confirmarQuitar(url: string) {
     </div>
 
     <p v-if="model.length" class="op__info">
-      ✅ {{ model.length }} foto{{ model.length === 1 ? '' : 's' }} de la OP · se enlazan al enviar el pedido. Toca una para verla.
+      <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ model.length }} foto{{ model.length === 1 ? '' : 's' }} de la OP · se enlazan al enviar el pedido. Toca una para verla.
     </p>
 
     <SelectorArchivo
