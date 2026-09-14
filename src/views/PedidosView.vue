@@ -106,6 +106,16 @@ async function decidir(id: string, estado: 'aprobado' | 'rechazado') {
           <button type="button" class="ped__comp" @click="comprobante = p">
             <i class="fa-solid fa-file-invoice"></i> Ver comprobante
           </button>
+          <a
+            v-for="(url, k) in p.fotos?.length ? p.fotos : p.fotoUrl ? [p.fotoUrl] : []"
+            :key="url"
+            :href="url"
+            target="_blank"
+            rel="noopener"
+            class="ped__comp is-foto"
+          >
+            📸 Foto OP{{ (p.fotos?.length || 0) > 1 ? ` ${k + 1}` : '' }}
+          </a>
 
           <div v-if="userStore.isAdmin && p.estado === 'enviado'" class="ped__acc">
             <button type="button" class="ok" @click="decidir(p._id, 'aprobado')">Aprobar</button>
@@ -146,6 +156,7 @@ async function decidir(id: string, estado: 'aprobado' | 'rechazado') {
     background: var(--surface); font-family: $font-principal; font-size: 0.76rem; font-weight: 700; color: var(--text); cursor: pointer;
     display: inline-flex; align-items: center; gap: 7px;
     &:hover { border-color: $primary; color: $primary; } }
+  &__comp.is-foto { text-decoration: none; margin-left: 8px; }
   &__obs { font-family: $font-secondary; font-size: 0.76rem; color: var(--text-soft); margin-top: 8px; font-style: italic; }
   &__rech { font-family: $font-secondary; font-size: 0.76rem; color: darken($alert-error, 6%); margin-top: 6px; }
   &__acc { display: flex; gap: 8px; margin-top: 12px;
