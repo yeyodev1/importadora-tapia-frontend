@@ -14,11 +14,11 @@ const emit = defineEmits<{ confirm: [observacion?: string]; cancel: [] }>()
 
 const observacion = ref('')
 
-const TEXTO: Record<ResultadoVisita, { emoji: string; label: string; ayuda: string }> = {
-  atendido: { emoji: '✅', label: 'Atendido', ayuda: 'Te atendieron.' },
-  espera: { emoji: '⏳', label: 'Esperó', ayuda: 'Tuviste que esperar para que te atiendan.' },
-  regreso: { emoji: '🔁', label: 'Debe regresar', ayuda: 'Hay que volver otro día.' },
-  abandono: { emoji: '🚫', label: 'No atendido', ayuda: 'No te recibieron.' },
+const TEXTO: Record<ResultadoVisita, { icono: string; label: string; ayuda: string }> = {
+  atendido: { icono: 'fa-circle-check', label: 'Atendido', ayuda: 'Te atendieron.' },
+  espera: { icono: 'fa-hourglass-half', label: 'Esperó', ayuda: 'Tuviste que esperar para que te atiendan.' },
+  regreso: { icono: 'fa-rotate-left', label: 'Debe regresar', ayuda: 'Hay que volver otro día.' },
+  abandono: { icono: 'fa-ban', label: 'No atendido', ayuda: 'No te recibieron.' },
 }
 
 watch(
@@ -40,7 +40,7 @@ function confirmar() {
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="salida-titulo">
           <header class="modal__head">
             <div>
-              <h2 id="salida-titulo">🚪 Marcar salida</h2>
+              <h2 id="salida-titulo"><i class="fa-solid fa-door-open" aria-hidden="true"></i> Marcar salida</h2>
               <p class="modal__hint">{{ cliente || 'Cliente sin nombre' }} · se guarda tu ubicación y la hora exacta.</p>
             </div>
             <button type="button" class="modal__x" aria-label="Cerrar" @click="emit('cancel')">
@@ -49,7 +49,7 @@ function confirmar() {
           </header>
 
           <p class="resultado">
-            <span aria-hidden="true">{{ TEXTO[resultado].emoji }}</span>
+            <i class="fa-solid" :class="TEXTO[resultado].icono" aria-hidden="true"></i>
             <strong>{{ TEXTO[resultado].label }}</strong>
             <small>{{ TEXTO[resultado].ayuda }}</small>
           </p>
@@ -90,7 +90,7 @@ function confirmar() {
 .resultado {
   display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; margin: 4px 0 12px; padding: 12px 14px;
   border-radius: 10px; background: var(--accent-soft);
-  span { font-size: 1.4rem; }
+  i { font-size: 1.3rem; color: $primary; }
   strong { font-size: 0.95rem; font-weight: 800; }
   small { flex-basis: 100%; font-family: $font-secondary; font-size: 0.76rem; color: var(--text-soft); }
 }
