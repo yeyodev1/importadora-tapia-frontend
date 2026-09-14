@@ -68,7 +68,7 @@ function recortar() {
   <Teleport to="body">
     <div v-if="file" class="recorte" role="dialog" aria-modal="true" aria-labelledby="recorte-titulo">
       <header class="recorte__head">
-        <h2 id="recorte-titulo">✂️ {{ titulo || 'Recorta la foto' }}</h2>
+        <h2 id="recorte-titulo"><i class="fa-solid fa-crop-simple" aria-hidden="true"></i> {{ titulo || 'Recorta la foto' }}</h2>
         <p>Mueve las esquinas para dejar solo el documento.</p>
       </header>
 
