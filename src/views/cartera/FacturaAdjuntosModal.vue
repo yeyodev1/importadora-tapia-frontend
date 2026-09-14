@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import RecortarImagen from '@/components/ui/RecortarImagen.vue'
+import { useRecorte } from '@/composables/useRecorte'
 import { useFacturaAdjuntosStore } from '@/stores/facturaAdjuntos'
 import { useUserStore } from '@/stores/user'
 import { numeroFactura } from '@/utils/compartirFactura'
@@ -19,6 +21,7 @@ const error = ref('')
 /** Doble confirmación al quitar: id del archivo y en qué paso va. */
 const quitando = ref<{ id: string; paso: 1 | 2 } | null>(null)
 const borrando = ref(false)
+const recorte = useRecorte()
 
 watch(
   () => props.open,
@@ -40,7 +43,10 @@ async function onFiles(e: Event) {
   if (!files.length || !props.factura) return
   error.value = ''
   try {
-    for (const [i, file] of files.entries()) {
+    for (const [i, original] of files.entries()) {
+      // Foto: primero se recorta (o se usa completa); cancelar la salta.
+      const file = await recorte.prepararArchivo(original)
+      if (!file) continue
       progreso.value = files.length > 1 ? `Subiendo ${i + 1} de ${files.length}…` : 'Subiendo…'
       await store.subir(String(props.factura.trc_codigo), file)
     }
@@ -135,6 +141,8 @@ const miniatura = (a: FacturaAdjunto) => a.url.replace('/image/upload/', '/image
       </div>
     </transition>
   </Teleport>
+
+  <RecortarImagen :file="recorte.archivo.value" titulo="Recorta la factura" @listo="recorte.listo" @cancelar="recorte.cancelar" />
 </template>
 
 <style lang="scss" scoped>
