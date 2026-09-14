@@ -90,8 +90,9 @@ function generarClave() {
 
 const puedeGuardar = computed(() => {
   if (saving.value) return false
-  if (isEdit.value) return true
-  if (!email.value.trim() || password.value.length < 6) return false
+  if (!email.value.trim()) return false
+  if (isEdit.value) return !password.value || password.value.length >= 6
+  if (password.value.length < 6) return false
   return role.value === 'vendedor' ? !!venCodigo.value : !!name.value.trim()
 })
 
@@ -101,7 +102,9 @@ async function save() {
   saving.value = true
   try {
     if (isEdit.value && props.user) {
+      const nuevoCorreo = email.value.trim().toLowerCase()
       await usersStore.update(props.user.id, {
+        email: nuevoCorreo && nuevoCorreo !== props.user.email ? nuevoCorreo : undefined,
         name: name.value || undefined,
         password: password.value || undefined,
         venCodigo: role.value === 'vendedor' ? venCodigo.value : undefined,
@@ -145,7 +148,7 @@ const pasoDatos = computed(() => (isEdit.value ? 'Datos' : role.value === 'vende
             <div>
               <h2>{{ isEdit ? 'Editar cuenta' : 'Nueva cuenta de acceso' }}</h2>
               <p class="modal__hint">
-                <template v-if="isEdit">Cambia el nombre, la contraseña o el vendedor vinculado.</template>
+                <template v-if="isEdit">Cambia el correo, el nombre, la contraseña o el vendedor vinculado.</template>
                 <template v-else>La persona recibirá un correo con su usuario y contraseña.</template>
               </p>
             </div>
@@ -184,7 +187,7 @@ const pasoDatos = computed(() => (isEdit.value ? 'Datos' : role.value === 'vende
 
               <label class="field">
                 <span>Correo (será su usuario)</span>
-                <input v-model="email" type="email" required :disabled="isEdit" placeholder="persona@importadoratapia.com" autocomplete="off" />
+                <input v-model="email" type="email" required placeholder="persona@importadoratapia.com" autocomplete="off" />
               </label>
 
               <label class="field">
