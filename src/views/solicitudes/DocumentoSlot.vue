@@ -2,6 +2,8 @@
 import { ref, computed } from 'vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import RecortarImagen from '@/components/ui/RecortarImagen.vue'
+import { useRecorte } from '@/composables/useRecorte'
 import { subirDocumento } from '@/utils/subirDocumento'
 import type { DefDocumento } from './documentos'
 import type { DocumentoSolicitud } from '@/types/solicitudes'
@@ -22,6 +24,7 @@ const emit = defineEmits<{
 
 const progreso = ref('')
 const error = ref('')
+const recorte = useRecorte()
 
 const estado = computed((): { tone: 'neutral' | 'success' | 'warning'; label: string } => {
   const n = props.archivos.length
@@ -38,7 +41,10 @@ async function onFiles(e: Event) {
   error.value = ''
   emit('ocupado', true)
   try {
-    for (const [i, file] of files.entries()) {
+    for (const [i, original] of files.entries()) {
+      // Foto: primero se recorta (o se usa completa); cancelar la salta.
+      const file = await recorte.prepararArchivo(original)
+      if (!file) continue
       progreso.value = files.length > 1 ? `Subiendo ${i + 1} de ${files.length}…` : 'Subiendo…'
       emit('agregar', await subirDocumento(file, props.def.tipo))
     }
@@ -94,6 +100,8 @@ function peso(bytes: number) {
     </label>
 
     <p v-if="error" class="doc__err" role="alert">{{ error }}</p>
+
+    <RecortarImagen :file="recorte.archivo.value" :titulo="def.label" @listo="recorte.listo" @cancelar="recorte.cancelar" />
   </div>
 </template>
 
