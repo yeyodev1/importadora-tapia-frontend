@@ -160,6 +160,7 @@ export interface Pedido {
   fotos?: string[]
   /** Salida de bodega (hora del servidor, fotos y quién la marcó). */
   despacho?: { salidaAt: string; fotos: string[]; observacion?: string; despachadoPor: string }
+  updatedAt?: string
   observacion?: string
   motivoRechazo?: string
   estado: EstadoPedido
