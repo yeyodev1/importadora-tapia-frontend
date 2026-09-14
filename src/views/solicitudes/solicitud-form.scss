@@ -1,0 +1,121 @@
+@use "@/styles/index.scss" as *;
+// Estilos compartidos del formulario de solicitud de crédito. Mobile first, flex.
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+
+  @media (min-width: 640px) {
+    padding: 20px 22px;
+  }
+
+  &__head {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    h2 { font-size: 0.98rem; font-weight: 800; }
+    p { font-family: $font-secondary; font-size: 0.76rem; line-height: 1.45; color: var(--text-soft); }
+  }
+}
+
+.sub {
+  margin-top: 4px;
+  font-family: $font-secondary;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.fila {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  @media (min-width: 640px) {
+    flex-direction: row;
+    > * { flex: 1 1 0; min-width: 0; }
+  }
+}
+
+.fld {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  > span {
+    font-family: $font-secondary;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--text-soft);
+    em { font-style: normal; color: $alert-error; }
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+    font-family: $font-secondary;
+    font-size: 0.9rem;
+    color: var(--text);
+    background: var(--surface);
+    resize: vertical;
+
+    &:focus { outline: none; border-color: $primary; box-shadow: 0 0 0 3px rgba($primary, 0.12); }
+    &:disabled { background: rgba($primary-dark, 0.03); color: var(--text-soft); }
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  font-family: $font-secondary;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+
+  &:hover:not(:disabled) { border-color: $primary; }
+  &.is-active { border-color: $primary; background: $primary; color: $white; }
+  &:disabled { cursor: default; opacity: 0.75; }
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  font-family: $font-secondary;
+  font-size: 0.78rem;
+  line-height: 1.45;
+
+  i { margin-top: 2px; }
+  &.is-warn { background: $alert-warning-bg; color: darken($alert-warning, 25%); }
+  &.is-info { background: var(--accent-soft); color: var(--text); }
+  &.is-ok { background: rgba($secondary, 0.12); color: darken($secondary, 18%); }
+  &.is-error { background: $alert-error-bg; color: darken($alert-error, 8%); }
+}
