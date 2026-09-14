@@ -90,7 +90,8 @@ async function decidir(id: string, estado: 'aprobado' | 'rechazado') {
           </div>
           <div class="ped__right">
             <b>{{ formatMoney(p.total) }}</b>
-            <BaseBadge :tone="tone[p.estado]">{{ label[p.estado] }}</BaseBadge>
+            <BaseBadge v-if="p.despacho?.salidaAt" tone="success">Despachado</BaseBadge>
+            <BaseBadge v-else :tone="tone[p.estado]">{{ label[p.estado] }}</BaseBadge>
             <i class="fa-solid fa-chevron-down ped__caret" :class="{ 'is-open': expandido === p._id }"></i>
           </div>
         </div>
@@ -107,6 +108,12 @@ async function decidir(id: string, estado: 'aprobado' | 'rechazado') {
           <button type="button" class="ped__comp" @click="comprobante = p">
             <i class="fa-solid fa-file-invoice"></i> Ver comprobante
           </button>
+          <p v-if="p.despacho?.salidaAt" class="ped__desp">
+            <i class="fa-solid fa-truck-fast" aria-hidden="true"></i>
+            Salió de bodega el {{ new Date(p.despacho.salidaAt).toLocaleString('es-EC', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) }}
+            · {{ p.despacho.despachadoPor }}
+            <template v-if="p.despacho.fotos.length"> · {{ p.despacho.fotos.length }} foto{{ p.despacho.fotos.length === 1 ? '' : 's' }}</template>
+          </p>
           <PedidoFotosEditor :pedido="p" />
 
           <div v-if="userStore.isAdmin && p.estado === 'enviado'" class="ped__acc">
@@ -149,6 +156,8 @@ async function decidir(id: string, estado: 'aprobado' | 'rechazado') {
     display: inline-flex; align-items: center; gap: 7px;
     &:hover { border-color: $primary; color: $primary; } }
   &__comp.is-foto { text-decoration: none; margin-left: 8px; }
+  &__desp { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 12px; padding: 9px 12px; border-radius: 9px;
+    background: rgba($secondary, 0.1); font-family: $font-secondary; font-size: 0.78rem; color: darken($secondary, 18%); }
   &__obs { font-family: $font-secondary; font-size: 0.76rem; color: var(--text-soft); margin-top: 8px; font-style: italic; }
   &__rech { font-family: $font-secondary; font-size: 0.76rem; color: darken($alert-error, 6%); margin-top: 6px; }
   &__acc { display: flex; gap: 8px; margin-top: 12px;
