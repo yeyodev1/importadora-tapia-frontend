@@ -37,6 +37,12 @@ class PedidosService extends APIBase {
     return res.data.data
   }
 
+  /** Bodega marca la salida (o, si ya salió, actualiza fotos y observación). */
+  async marcarDespacho(id: string, payload: { fotos: string[]; observacion?: string }): Promise<Pedido> {
+    const res = await this.patch<OneResponse>(`pedidos/${id}/despacho`, payload)
+    return res.data.data
+  }
+
   /** Firma para subir la foto de la orden de pedido (OP) directo a Cloudinary. */
   async firmaSubida(): Promise<FirmaSubida> {
     const res = await this.post<{ success: boolean; data: FirmaSubida }>('pedidos/firma-subida', {})
