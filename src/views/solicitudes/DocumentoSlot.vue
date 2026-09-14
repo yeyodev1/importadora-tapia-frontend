@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
-import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import SelectorArchivo from '@/components/ui/SelectorArchivo.vue'
 import RecortarImagen from '@/components/ui/RecortarImagen.vue'
 import { useRecorte } from '@/composables/useRecorte'
 import { subirDocumento } from '@/utils/subirDocumento'
@@ -33,10 +33,7 @@ const estado = computed((): { tone: 'neutral' | 'success' | 'warning'; label: st
   return { tone: 'warning', label: props.minimo > 1 ? `${n} de ${props.minimo}` : 'Falta' }
 })
 
-async function onFiles(e: Event) {
-  const input = e.target as HTMLInputElement
-  const files = Array.from(input.files || [])
-  input.value = ''
+async function onFiles(files: File[]) {
   if (!files.length) return
   error.value = ''
   emit('ocupado', true)
@@ -92,12 +89,12 @@ function peso(bytes: number) {
       </li>
     </ul>
 
-    <label v-if="!disabled" class="doc__add" :class="{ 'is-busy': progreso }">
-      <input type="file" accept="image/*,application/pdf" multiple :disabled="!!progreso" @change="onFiles" />
-      <BaseSpinner v-if="progreso" :size="14" />
-      <i v-else class="fa-solid fa-paperclip"></i>
-      {{ progreso || (archivos.length ? 'Agregar otro archivo' : 'Tomar foto o subir PDF') }}
-    </label>
+    <SelectorArchivo
+      v-if="!disabled"
+      :progreso="progreso"
+      :texto-foto="archivos.length ? 'Tomar otra foto' : 'Tomar foto'"
+      @elegir="onFiles"
+    />
 
     <p v-if="error" class="doc__err" role="alert">{{ error }}</p>
 
