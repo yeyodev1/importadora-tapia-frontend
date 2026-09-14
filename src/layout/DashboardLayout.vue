@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import AppSidebar from './components/AppSidebar.vue'
 import AppTopbar from './components/AppTopbar.vue'
 import ErpStatusBanner from './components/ErpStatusBanner.vue'
+import VisitaEnCursoBanner from './components/VisitaEnCursoBanner.vue'
 import { useUserStore } from '@/stores/user'
 import { useSystemStore } from '@/stores/system'
 
@@ -41,6 +42,7 @@ onBeforeUnmount(() => {
     <div class="layout__main">
       <AppTopbar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
       <ErpStatusBanner />
+      <VisitaEnCursoBanner />
 
       <main class="layout__content">
         <RouterView v-slot="{ Component }">
