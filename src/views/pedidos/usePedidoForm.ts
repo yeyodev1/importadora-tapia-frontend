@@ -28,7 +28,9 @@ export function usePedidoForm() {
   const plazoCreditoDias = ref<number | null>(null)
   const lineas = ref<Linea[]>([])
   const buscar = ref('')
-  const foto = ref('')
+  /** Fotos de la orden de pedido (OP), ya subidas a Cloudinary (puede haber varias hojas). */
+  const fotos = ref<string[]>([])
+  const subiendoFoto = ref(false)
   const saving = ref(false)
   const error = ref('')
   const inventario = ref<InventarioDisponible[]>([])
@@ -54,7 +56,7 @@ export function usePedidoForm() {
     plazoCreditoDias.value = null
     lineas.value = []
     buscar.value = ''
-    foto.value = ''
+    fotos.value = []
   }
 
   const resultados = computed(() => {
@@ -98,6 +100,10 @@ export function usePedidoForm() {
   async function guardar(): Promise<boolean> {
     if (saving.value) return false
     error.value = ''
+    if (subiendoFoto.value) {
+      error.value = 'Espera a que termine de subir la foto de la orden de pedido.'
+      return false
+    }
     if (!cliente.value) {
       error.value = 'Indica el cliente.'
       return false
@@ -133,7 +139,7 @@ export function usePedidoForm() {
           cantidad: l.cantidad,
           precioUnitario: l.precioUnitario,
         })),
-        foto: foto.value || undefined,
+        fotos: fotos.value.length ? [...fotos.value] : undefined,
         observacion: observacion.value || undefined,
       })
       return true
@@ -146,7 +152,7 @@ export function usePedidoForm() {
   }
 
   return {
-    cliente, observacion, plazoCreditoDias, lineas, buscar, foto, saving, error, cargandoInv,
+    cliente, observacion, plazoCreditoDias, lineas, buscar, fotos, subiendoFoto, saving, error, cargandoInv,
     resultados, total, soloContado, conflictoContado, reset, agregar, quitar, guardar,
   }
 }
