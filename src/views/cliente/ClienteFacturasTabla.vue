@@ -1,6 +1,11 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import DataTable, { type Column } from '@/components/ui/DataTable.vue'
+import FacturaCompartir from '../cartera/FacturaCompartir.vue'
+import EnviarFacturaModal from '../cartera/EnviarFacturaModal.vue'
+import FacturaAdjuntosModal from '../cartera/FacturaAdjuntosModal.vue'
+import { useFacturaAdjuntosStore } from '@/stores/facturaAdjuntos'
 import { formatMoney, formatDate, formatNumFactura } from '@/utils/format'
 import { tienePlazo, estadoCartera, estaPagada, etiquetaEstado, haceDias, ESTADO_CARTERA_BADGE } from '@/utils/cartera'
 import type { FacturaCartera } from '@/types/erp'
@@ -13,13 +18,20 @@ defineProps<{
 
 defineEmits<{ retry: [] }>()
 
+const adjuntos = useFacturaAdjuntosStore()
+onMounted(() => adjuntos.fetch(true))
+
+/** Factura elegida para enviar por correo o para ver/subir su foto. */
+const porCorreo = ref<FacturaCartera | null>(null)
+const conFotos = ref<FacturaCartera | null>(null)
+
 const columns: Column[] = [
   { key: 'documento', label: 'N° factura' },
   { key: 'trc_fecha', label: 'Emisión', sortable: true },
   { key: 'fecha_vencimiento', label: 'Antigüedad', sortable: true },
   { key: 'trc_totfact', label: 'Total', align: 'right', sortable: true },
   { key: 'saldo_pendiente', label: 'Saldo', align: 'right', sortable: true },
-  { key: 'estado_factura', label: 'Estado', align: 'center' },
+  { key: 'estado_factura', label: 'Estado · factura', align: 'center' },
 ]
 </script>
 
@@ -51,9 +63,12 @@ const columns: Column[] = [
       <b :class="{ 'sin-saldo': Number(value) === 0 }">{{ formatMoney(value) }}</b>
     </template>
     <template #cell-estado_factura="{ row }">
-      <BaseBadge :tone="ESTADO_CARTERA_BADGE[estadoCartera(row)].tone">
-        {{ etiquetaEstado(row) }}
-      </BaseBadge>
+      <div class="estado-cell">
+        <BaseBadge :tone="ESTADO_CARTERA_BADGE[estadoCartera(row)].tone">
+          {{ etiquetaEstado(row) }}
+        </BaseBadge>
+        <FacturaCompartir compacto :factura="row" @correo="(f) => (porCorreo = f)" @adjuntos="(f) => (conFotos = f)" />
+      </div>
     </template>
 
     <template #mobile-card="{ row }">
@@ -70,9 +85,13 @@ const columns: Column[] = [
           · Total {{ formatMoney(row.trc_totfact) }}
         </p>
         <b>Saldo {{ formatMoney(row.saldo_pendiente) }}</b>
+        <FacturaCompartir class="fmcard__share" :factura="row" @correo="(f) => (porCorreo = f)" @adjuntos="(f) => (conFotos = f)" />
       </div>
     </template>
   </DataTable>
+
+  <EnviarFacturaModal :open="!!porCorreo" :factura="porCorreo" @close="porCorreo = null" />
+  <FacturaAdjuntosModal :open="!!conFotos" :factura="conFotos" @close="conFotos = null" />
 </template>
 
 <style lang="scss" scoped>
@@ -96,6 +115,13 @@ const columns: Column[] = [
     font-size: 0.64rem;
     color: var(--text-faint);
   }
+}
+
+.estado-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
 .faint {
@@ -127,6 +153,12 @@ const columns: Column[] = [
     margin-top: 4px;
     font-size: 0.84rem;
     font-variant-numeric: tabular-nums;
+  }
+
+  &__share {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
   }
 }
 </style>
