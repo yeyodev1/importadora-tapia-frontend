@@ -32,6 +32,7 @@ const icons: Record<string, string> = {
   key: 'fa-key',
   user: 'fa-circle-user',
   usersGear: 'fa-users-gear',
+  fileSign: 'fa-file-signature',
 }
 
 const allSections: { title: string; items: NavItem[] }[] = [
@@ -43,6 +44,7 @@ const allSections: { title: string; items: NavItem[] }[] = [
     title: 'Comercial',
     items: [
       { to: '/clientes', label: 'Clientes', icon: 'users' },
+      { to: '/solicitudes', label: 'Solicitudes de crédito', icon: 'fileSign' },
       { to: '/vendedores', label: 'Vendedores', icon: 'briefcase', adminOnly: true },
     ],
   },
