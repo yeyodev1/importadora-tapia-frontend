@@ -13,16 +13,16 @@ const visitas = useVisitasStore()
 const userStore = useUserStore()
 
 function refrescar() {
-  if (!userStore.isAdmin && document.visibilityState === 'visible') visitas.fetch(true)
+  if (userStore.isVendedor && document.visibilityState === 'visible') visitas.fetch(true)
 }
 
 onMounted(() => {
-  if (!userStore.isAdmin) visitas.fetch()
+  if (userStore.isVendedor) visitas.fetch()
   document.addEventListener('visibilitychange', refrescar)
 })
 onBeforeUnmount(() => document.removeEventListener('visibilitychange', refrescar))
 
-const enCurso = computed(() => (userStore.isAdmin ? null : visitas.enCurso))
+const enCurso = computed(() => (userStore.isVendedor ? visitas.enCurso : null))
 
 const desde = computed(() => {
   const v = enCurso.value
