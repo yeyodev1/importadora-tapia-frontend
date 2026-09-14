@@ -128,7 +128,9 @@ function confirmarQuitar(url: string) {
     border-radius: 10px;
     overflow: hidden;
     background: rgba($primary-dark, 0.05);
-    img { width: 100%; height: 100%; object-fit: cover; }
+    text-decoration: none;
+    // Si la foto no carga (señal débil), no se desborda el texto alternativo.
+    img { width: 100%; height: 100%; object-fit: cover; font-size: 0; color: transparent; }
   }
 
   &__pdf { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: $alert-error-bg; color: $alert-error; font-size: 1.6rem; }
