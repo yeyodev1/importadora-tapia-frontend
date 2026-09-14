@@ -8,6 +8,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonTable from '@/components/ui/SkeletonTable.vue'
 import PedidoFormModal from './pedidos/PedidoFormModal.vue'
 import PedidoComprobante from './pedidos/PedidoComprobante.vue'
+import PedidoFotosEditor from './pedidos/PedidoFotosEditor.vue'
 import { formatMoney, formatDate, formatQty, formatPlazo } from '@/utils/format'
 import type { EstadoPedido, Pedido } from '@/types/erp'
 
@@ -106,16 +107,7 @@ async function decidir(id: string, estado: 'aprobado' | 'rechazado') {
           <button type="button" class="ped__comp" @click="comprobante = p">
             <i class="fa-solid fa-file-invoice"></i> Ver comprobante
           </button>
-          <a
-            v-for="(url, k) in p.fotos?.length ? p.fotos : p.fotoUrl ? [p.fotoUrl] : []"
-            :key="url"
-            :href="url"
-            target="_blank"
-            rel="noopener"
-            class="ped__comp is-foto"
-          >
-            📸 Foto OP{{ (p.fotos?.length || 0) > 1 ? ` ${k + 1}` : '' }}
-          </a>
+          <PedidoFotosEditor :pedido="p" />
 
           <div v-if="userStore.isAdmin && p.estado === 'enviado'" class="ped__acc">
             <button type="button" class="ok" @click="decidir(p._id, 'aprobado')">Aprobar</button>
