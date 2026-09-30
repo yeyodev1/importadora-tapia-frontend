@@ -16,6 +16,7 @@ const emit = defineEmits<{ close: []; saved: [asignacion: AsignacionInventario] 
 const erp = useErpStore()
 
 const restringido = ref(false)
+const bodega = ref<string | null>(null)
 const seleccion = ref<Set<string>>(new Set())
 const buscar = ref('')
 const saving = ref(false)
@@ -29,9 +30,13 @@ watch(
     error.value = ''
     buscar.value = ''
     restringido.value = Boolean(props.actual?.restringido)
+    bodega.value = props.actual?.bodega || null
     seleccion.value = new Set(props.actual?.productos || [])
   },
 )
+
+/** Bodegas del ERP (Quito, Guayaquil…): el vendedor solo vende de la suya. */
+const bodegas = computed(() => [...new Set(erp.inventario.data.map((i) => i.bod_nombre).filter(Boolean))].sort())
 
 /** Productos únicos del ERP (el inventario viene por bodega). */
 const productos = computed(() => {
@@ -61,7 +66,7 @@ function marcarVisibles(marcar: boolean) {
   seleccion.value = next
 }
 
-const puedeGuardar = computed(() => !saving.value && (!restringido.value || seleccion.value.size > 0))
+const puedeGuardar = computed(() => !saving.value && !!bodega.value && (!restringido.value || seleccion.value.size > 0))
 
 async function guardar() {
   if (!props.vendedor || !puedeGuardar.value) return
@@ -71,6 +76,7 @@ async function guardar() {
     const a = await erpService.guardarAsignacionInventario(props.vendedor.ven_codigo, {
       restringido: restringido.value,
       productos: restringido.value ? [...seleccion.value] : [],
+      bodega: bodega.value,
     })
     emit('saved', a)
     emit('close')
@@ -90,10 +96,29 @@ async function guardar() {
           <header class="modal__head">
             <div>
               <h2>Inventario de {{ vendedor.ven_nombre }}</h2>
-              <p class="modal__hint">Elige qué productos puede ver y vender este vendedor. Si no lo limitas, ve todo el inventario.</p>
+              <p class="modal__hint">Elige de qué bodega vende y qué productos puede ver. Solo verá y venderá el stock de su bodega.</p>
             </div>
             <button type="button" class="modal__x" aria-label="Cerrar" @click="emit('close')"><i class="fa-solid fa-xmark"></i></button>
           </header>
+
+          <div class="bodegas">
+            <span class="bodegas__label">Bodega de la que vende <em>· obligatorio</em></span>
+            <p v-if="erp.inventario.loading && !bodegas.length" class="estado"><BaseSpinner :size="12" /> Cargando bodegas…</p>
+            <div v-else class="bodegas__list">
+              <button
+                v-for="b in bodegas"
+                :key="b"
+                type="button"
+                class="bodega"
+                :class="{ 'is-active': bodega === b }"
+                :aria-pressed="bodega === b"
+                @click="bodega = b"
+              >
+                <i class="fa-solid fa-warehouse"></i> {{ b }}
+              </button>
+            </div>
+            <small v-if="!bodega" class="bodegas__aviso">Sin bodega asignada el vendedor no puede enviar pedidos.</small>
+          </div>
 
           <div class="modos">
             <button type="button" class="modo" :class="{ 'is-active': !restringido }" @click="restringido = false">
@@ -158,6 +183,35 @@ async function guardar() {
 @use '@/views/equipo/form-modal';
 
 .modal { max-width: 620px; }
+
+.bodegas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  &__label { font-family: $font-secondary; font-size: 0.74rem; font-weight: 700; color: var(--text); em { font-style: normal; color: var(--text-faint); font-weight: 600; } }
+  &__list { display: flex; flex-wrap: wrap; gap: 8px; }
+  &__aviso { font-family: $font-secondary; font-size: 0.72rem; color: $alert-error; }
+}
+
+.bodega {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  font-family: $font-principal;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  i { color: var(--text-faint); }
+  &:hover { border-color: $primary; }
+  &.is-active { border-color: $primary; background: var(--accent-soft); i { color: $primary; } }
+}
 
 .modos {
   display: flex;
