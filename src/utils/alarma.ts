@@ -37,24 +37,32 @@ export async function desbloquearAudio(): Promise<boolean> {
   return c.state === 'running'
 }
 
-/** Alarma fuerte y llamativa: 3 ráfagas de dos tonos (~2.4 s) + vibración. */
-export function sonarAlarma(): boolean {
+/**
+ * Alarma fuerte y llamativa: ráfagas de dos tonos + vibración.
+ * `volumen` va de 0 a 1 (ajuste del perfil); `rafagas` = 3 para un aviso real
+ * (~2.4 s) y 1 para la prueba corta al mover el volumen.
+ */
+export function sonarAlarma(volumen = 1, rafagas = 3): boolean {
+  if (volumen <= 0) return false
   try {
-    navigator.vibrate?.([300, 120, 300, 120, 600])
+    navigator.vibrate?.(rafagas > 1 ? [300, 120, 300, 120, 600] : [200])
   } catch {
     /* sin vibración */
   }
   const c = contexto()
   if (!c || c.state !== 'running') return false
 
-  // Compresor: sube el volumen percibido sin distorsionar.
+  // Compresor: sube el volumen percibido sin distorsionar. Luego el volumen
+  // elegido (curva cuadrática: el oído percibe mejor los pasos bajos).
   const comp = c.createDynamicsCompressor()
   comp.threshold.value = -12
   comp.ratio.value = 6
-  comp.connect(c.destination)
+  const master = c.createGain()
+  master.gain.value = Math.min(1, volumen) ** 2
+  comp.connect(master).connect(c.destination)
 
   const t0 = c.currentTime + 0.05
-  for (let rafaga = 0; rafaga < 3; rafaga++) {
+  for (let rafaga = 0; rafaga < rafagas; rafaga++) {
     for (let k = 0; k < 4; k++) {
       const t = t0 + rafaga * 0.8 + k * 0.14
       const o = c.createOscillator()
