@@ -159,7 +159,7 @@ async function decidir(id: string, estado: 'aprobado' | 'rechazado') {
     display: inline-flex; align-items: center; gap: 7px;
     &:hover { border-color: $primary; color: $primary; } }
   &__comp.is-foto { text-decoration: none; margin-left: 8px; }
-  &__desp { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 12px; padding: 9px 12px; border-radius: 9px;
+  &__desp { display: block; overflow-wrap: anywhere; margin-top: 12px; i { margin-right: 6px; } padding: 9px 12px; border-radius: 9px;
     background: rgba($secondary, 0.1); font-family: $font-secondary; font-size: 0.78rem; color: darken($secondary, 18%); }
   &__obs { font-family: $font-secondary; font-size: 0.76rem; color: var(--text-soft); margin-top: 8px; font-style: italic; }
   &__rech { font-family: $font-secondary; font-size: 0.76rem; color: darken($alert-error, 6%); margin-top: 6px; }
