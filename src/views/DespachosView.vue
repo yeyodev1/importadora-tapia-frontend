@@ -5,6 +5,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonTable from '@/components/ui/SkeletonTable.vue'
 import DespachoCard from './despachos/DespachoCard.vue'
 import MarcarSalidaModal from './despachos/MarcarSalidaModal.vue'
+import RetrasoModal from './despachos/RetrasoModal.vue'
 import { usePedidosStore } from '@/stores/pedidos'
 import type { Pedido } from '@/types/erp'
 
@@ -15,6 +16,7 @@ type Grupo = 'por_despachar' | 'revision' | 'rechazados' | 'despachados'
 const grupo = ref<Grupo>('por_despachar')
 const buscar = ref('')
 const seleccionado = ref<Pedido | null>(null)
+const retrasando = ref<Pedido | null>(null)
 
 const GRUPOS: { v: Grupo; label: string; ayuda: string; icono: string; tono: string }[] = [
   { v: 'por_despachar', label: 'Por despachar', ayuda: 'Aprobados, listos para salir', icono: 'fa-truck-ramp-box', tono: 'is-primario' },
@@ -112,11 +114,12 @@ onBeforeUnmount(() => {
     <EmptyState v-else-if="!lista.length" :title="VACIO[grupo].titulo" :message="VACIO[grupo].mensaje" />
     <ul v-else class="lista">
       <li v-for="p in lista" :key="p._id">
-        <DespachoCard :pedido="p" @despachar="seleccionado = p" />
+        <DespachoCard :pedido="p" @despachar="seleccionado = p" @retrasar="retrasando = p" />
       </li>
     </ul>
 
     <MarcarSalidaModal :pedido="seleccionado" @close="seleccionado = null" />
+    <RetrasoModal :pedido="retrasando" @close="retrasando = null" />
   </div>
 </template>
 
