@@ -162,6 +162,8 @@ export interface Pedido {
   fotos?: string[]
   /** Salida de bodega (hora del servidor, fotos y quién la marcó). */
   despacho?: { salidaAt: string; fotos: string[]; observacion?: string; despachadoPor: string }
+  /** Retrasos del despacho; el último es el vigente. nuevaFecha = "YYYY-MM-DD". */
+  retrasos?: { registradoAt: string; nuevaFecha: string; motivo: string; registradoPor: string }[]
   updatedAt?: string
   observacion?: string
   motivoRechazo?: string
