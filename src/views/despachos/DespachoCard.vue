@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
+import RetrasoAviso from './RetrasoAviso.vue'
+import { fechaCorta } from '@/composables/useAlertasPedidos'
 import { formatDate, formatQty, formatPlazo } from '@/utils/format'
 import type { Pedido } from '@/types/erp'
 
 /** Tarjeta de un pedido para bodega: qué sale, en qué estado está y su salida. */
 const props = defineProps<{ pedido: Pedido }>()
-const emit = defineEmits<{ despachar: [] }>()
+const emit = defineEmits<{ despachar: []; retrasar: [] }>()
 
 type Tono = 'success' | 'info' | 'danger' | 'warning'
 
@@ -18,6 +20,8 @@ const salida = computed(() => (props.pedido.despacho?.salidaAt ? new Date(props.
 
 const estado = computed((): { tone: Tono; label: string } => {
   if (salida.value) return { tone: 'success', label: 'Despachado' }
+  const r = props.pedido.retrasos?.[props.pedido.retrasos.length - 1]
+  if (props.pedido.estado === 'aprobado' && r) return { tone: 'warning', label: `Retrasado · sale ${fechaCorta(r.nuevaFecha)}` }
   if (props.pedido.estado === 'aprobado') return { tone: 'info', label: 'Aprobado · por despachar' }
   if (props.pedido.estado === 'rechazado') return { tone: 'danger', label: 'Rechazado' }
   return { tone: 'warning', label: 'Pendiente de revisión' }
@@ -61,6 +65,8 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
       <i class="fa-solid fa-ban" aria-hidden="true"></i> Rechazado<template v-if="pedido.motivoRechazo">: {{ pedido.motivoRechazo }}</template>. No se despacha.
     </p>
 
+    <RetrasoAviso :pedido="pedido" />
+
     <div v-if="salida" class="dc__salida">
       <p><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Salió de bodega el <b>{{ hora(salida) }}</b> · {{ pedido.despacho?.despachadoPor }}</p>
       <p v-if="pedido.despacho?.observacion" class="dc__nota">{{ pedido.despacho.observacion }}</p>
@@ -74,9 +80,14 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
         <i class="fa-solid fa-camera" aria-hidden="true"></i> Agregar o cambiar fotos
       </button>
     </div>
-    <button v-else-if="pedido.estado === 'aprobado'" type="button" class="dc__btn" @click="emit('despachar')">
-      <i class="fa-solid fa-truck-ramp-box" aria-hidden="true"></i> Marcar salida
-    </button>
+    <div v-else-if="pedido.estado === 'aprobado'" class="dc__acc">
+      <button type="button" class="dc__btn" @click="emit('despachar')">
+        <i class="fa-solid fa-truck-ramp-box" aria-hidden="true"></i> Marcar salida
+      </button>
+      <button type="button" class="dc__btn is-sec" @click="emit('retrasar')">
+        <i class="fa-solid fa-calendar-xmark" aria-hidden="true"></i> No sale hoy · registrar retraso
+      </button>
+    </div>
   </article>
 </template>
 
@@ -131,6 +142,8 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
     display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: rgba($secondary, 0.08);
     > p:first-child { display: flex; align-items: center; gap: 8px; font-family: $font-secondary; font-size: 0.82rem; i { color: darken($secondary, 10%); } }
   }
+
+  &__acc { display: flex; flex-direction: column; gap: 8px; @media (min-width: 560px) { flex-direction: row; > * { flex: 1 1 0; } } }
 
   &__btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; padding: 0 16px;
