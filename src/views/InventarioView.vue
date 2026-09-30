@@ -7,6 +7,7 @@ import DataTable, { type Column } from '@/components/ui/DataTable.vue'
 import { formatQty } from '@/utils/format'
 import { erpService } from '@/services/erp.service'
 import { useUserStore } from '@/stores/user'
+import AvisoAsignacion from './inventario/AvisoAsignacion.vue'
 import type { AsignacionInventario } from '@/types/erp'
 
 const erp = useErpStore()
@@ -78,11 +79,7 @@ function stockLabel(value: string): string {
 
 <template>
   <div>
-    <p v-if="asignacion?.restringido" class="asignado">
-      <i class="fa-solid fa-filter"></i>
-      Ves solo el inventario que administración te asignó
-      (<b>{{ asignacion.productos.length }}</b> producto{{ asignacion.productos.length === 1 ? '' : 's' }}).
-    </p>
+    <AvisoAsignacion :asignacion="asignacion" />
 
     <PageHeader
       title="Inventario"
@@ -204,22 +201,6 @@ function stockLabel(value: string): string {
   &:hover { border-color: $primary; color: var(--text); }
   &.is-on { border-color: rgba($alert-warning, 0.7); background: $alert-warning-bg; color: darken($alert-warning, 25%); i { color: darken($alert-warning, 15%); } }
   &:disabled { opacity: 0.6; cursor: wait; }
-}
-
-.asignado {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 14px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: var(--accent-soft);
-  border: 1px solid rgba($primary, 0.2);
-  font-family: $font-secondary;
-  font-size: 0.78rem;
-  color: var(--text-soft);
-  i { color: $primary; }
-  b { color: var(--text); }
 }
 
 .chips {
