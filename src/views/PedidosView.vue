@@ -9,6 +9,7 @@ import SkeletonTable from '@/components/ui/SkeletonTable.vue'
 import PedidoFormModal from './pedidos/PedidoFormModal.vue'
 import PedidoComprobante from './pedidos/PedidoComprobante.vue'
 import PedidoFotosEditor from './pedidos/PedidoFotosEditor.vue'
+import RetrasoAviso from './despachos/RetrasoAviso.vue'
 import { formatMoney, formatDate, formatQty, formatPlazo } from '@/utils/format'
 import type { EstadoPedido, Pedido } from '@/types/erp'
 
@@ -91,6 +92,7 @@ async function decidir(id: string, estado: 'aprobado' | 'rechazado') {
           <div class="ped__right">
             <b>{{ formatMoney(p.total) }}</b>
             <BaseBadge v-if="p.despacho?.salidaAt" tone="success">Despachado</BaseBadge>
+            <BaseBadge v-else-if="p.estado === 'aprobado' && p.retrasos?.length" tone="warning">Retrasado</BaseBadge>
             <BaseBadge v-else :tone="tone[p.estado]">{{ label[p.estado] }}</BaseBadge>
             <i class="fa-solid fa-chevron-down ped__caret" :class="{ 'is-open': expandido === p._id }"></i>
           </div>
@@ -114,6 +116,7 @@ async function decidir(id: string, estado: 'aprobado' | 'rechazado') {
             · {{ p.despacho.despachadoPor }}
             <template v-if="p.despacho.fotos.length"> · {{ p.despacho.fotos.length }} foto{{ p.despacho.fotos.length === 1 ? '' : 's' }}</template>
           </p>
+          <RetrasoAviso :pedido="p" />
           <PedidoFotosEditor :pedido="p" />
 
           <div v-if="userStore.isAdmin && p.estado === 'enviado'" class="ped__acc">
