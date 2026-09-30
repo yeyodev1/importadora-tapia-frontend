@@ -6,6 +6,7 @@ import { useErpStore } from '@/stores/erp'
 import { useCobrosStore } from '@/stores/cobros'
 import { erpService } from '@/services/erp.service'
 import PageHeader from '@/components/ui/PageHeader.vue'
+import AjustesAlertas from './perfil/AjustesAlertas.vue'
 import { initials, formatMoney } from '@/utils/format'
 import type { AppUser } from '@/types/erp'
 
@@ -62,6 +63,8 @@ function logout() {
       <button class="card__logout" type="button" @click="logout">Cerrar sesión</button>
     </section>
 
+    <AjustesAlertas />
+
     <section class="stats" v-if="userStore.isVendedor">
       <div class="stat">
         <span>Mis clientes</span>
@@ -77,7 +80,7 @@ function logout() {
       </div>
     </section>
 
-    <RouterLink to="/cobros" class="link-cobros">Ver mis cobros →</RouterLink>
+    <RouterLink v-if="!userStore.isBodega" to="/cobros" class="link-cobros">Ver mis cobros →</RouterLink>
   </div>
 </template>
 
