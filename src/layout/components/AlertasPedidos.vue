@@ -5,7 +5,7 @@ import { useAlertasPedidos, type AlertaPedido } from '@/composables/useAlertasPe
 
 /** Avisos con sonido de pedidos nuevos o revisados, visibles en cualquier pantalla. */
 const router = useRouter()
-const { alertas, sonidoListo, iniciar, detener, activar, cerrar } = useAlertasPedidos()
+const { alertas, sonidoListo, sonidoActivo, iniciar, detener, activar, cerrar } = useAlertasPedidos()
 
 onMounted(iniciar)
 onBeforeUnmount(detener)
@@ -21,7 +21,7 @@ const icono = (a: AlertaPedido) =>
 
 <template>
   <div class="alertas" aria-live="assertive">
-    <button v-if="!sonidoListo" type="button" class="alertas__activar" @click="activar">
+    <button v-if="sonidoActivo && !sonidoListo" type="button" class="alertas__activar" @click="activar">
       <i class="fa-solid fa-volume-high" aria-hidden="true"></i> Activar alertas con sonido
     </button>
 
