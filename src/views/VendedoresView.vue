@@ -36,8 +36,9 @@ async function cargarAsignaciones() {
 
 function resumenInventario(venCodigo: string): string {
   const a = asignaciones.value[venCodigo]
-  if (!a?.restringido) return 'Ve todo el inventario'
-  return `Inventario limitado: ${a.productos.length} producto${a.productos.length === 1 ? '' : 's'}`
+  const bodega = a?.bodega ? `Bodega ${a.bodega}` : 'Sin bodega asignada'
+  if (!a?.restringido) return `${bodega} · todo el inventario`
+  return `${bodega} · ${a.productos.length} producto${a.productos.length === 1 ? '' : 's'}`
 }
 
 function onAsignacionGuardada(a: AsignacionInventario) {
@@ -113,7 +114,12 @@ const count = computed(() => (erp.vendedores.fetchedAt ? vendedoresVisibles.valu
           <strong>{{ formatInt(clientesPorVendedor.get(v.ven_codigo) || 0) }}</strong>
           clientes asignados
         </p>
-        <button type="button" class="card__inv" :class="{ 'is-limitado': asignaciones[v.ven_codigo]?.restringido }" @click="invVendedor = v">
+        <button
+          type="button"
+          class="card__inv"
+          :class="{ 'is-limitado': asignaciones[v.ven_codigo]?.restringido, 'is-sin-bodega': !asignaciones[v.ven_codigo]?.bodega }"
+          @click="invVendedor = v"
+        >
           <i class="fa-solid" :class="asignaciones[v.ven_codigo]?.restringido ? 'fa-filter' : 'fa-boxes-stacked'"></i>
           {{ resumenInventario(v.ven_codigo) }}
           <small>Cambiar</small>
@@ -154,6 +160,7 @@ const count = computed(() => (erp.vendedores.fetchedAt ? vendedoresVisibles.valu
   small { margin-left: auto; color: $primary; font-weight: 700; }
   &:hover { border-color: $primary; color: var(--text); }
   &.is-limitado { border-color: rgba($primary, 0.5); background: var(--accent-soft); color: var(--text); i { color: $primary; } }
+  &.is-sin-bodega { border-color: rgba($alert-error, 0.5); color: $alert-error; i { color: $alert-error; } }
 }
 
 .link-equipo {
