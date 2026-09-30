@@ -3,6 +3,7 @@ import { pedidosService } from '@/services/pedidos.service'
 import { usePedidosStore } from '@/stores/pedidos'
 import { useUserStore } from '@/stores/user'
 import { audioListo, desbloquearAudio, sonarAlarma } from '@/utils/alarma'
+import { usePreferenciasAlerta } from '@/composables/usePreferenciasAlerta'
 import type { Pedido } from '@/types/erp'
 
 export interface AlertaPedido {
@@ -76,8 +77,10 @@ function pararTitulo() {
   document.title = tituloOriginal
 }
 
+const preferencias = usePreferenciasAlerta()
+
 function avisar(nuevas: AlertaPedido[]) {
-  sonarAlarma()
+  sonarAlarma(preferencias.volumenAlarma())
   sonidoListo.value = audioListo()
   const n = nuevas[0]!
   const cuerpo = nuevas.length > 1 ? `${n.detalle} y ${nuevas.length - 1} más` : n.detalle
@@ -160,7 +163,7 @@ export function useAlertasPedidos() {
         /* el usuario puede negarlo */
       }
     }
-    sonarAlarma()
+    sonarAlarma(preferencias.volumenAlarma())
   }
 
   function cerrar(clave: string) {
@@ -168,5 +171,5 @@ export function useAlertasPedidos() {
     if (!alertas.value.length) pararTitulo()
   }
 
-  return { alertas, sonidoListo, iniciar, detener, activar, cerrar }
+  return { alertas, sonidoListo, sonidoActivo: preferencias.sonidoActivo, iniciar, detener, activar, cerrar }
 }
