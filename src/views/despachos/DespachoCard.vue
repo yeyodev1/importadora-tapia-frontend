@@ -68,7 +68,10 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
     <RetrasoAviso :pedido="pedido" />
 
     <div v-if="salida" class="dc__salida">
-      <p><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Salió de bodega el <b>{{ hora(salida) }}</b> · {{ pedido.despacho?.despachadoPor }}</p>
+      <p class="dc__salio">
+        <i class="fa-solid fa-truck-fast" aria-hidden="true"></i>
+        <span>Salió de bodega el <b>{{ hora(salida) }}</b><small>{{ pedido.despacho?.despachadoPor }}</small></span>
+      </p>
       <p v-if="pedido.despacho?.observacion" class="dc__nota">{{ pedido.despacho.observacion }}</p>
       <div v-if="pedido.despacho?.fotos.length" class="dc__fotos">
         <span>Fotos del despacho</span>
@@ -101,14 +104,16 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-card);
+  min-width: 0;
+  overflow-wrap: anywhere;
 
   &.is-listo { border-color: rgba($primary, 0.45); }
 
   &__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
   &__who {
     display: flex; flex-direction: column; gap: 2px; min-width: 0;
-    strong { font-size: 0.95rem; font-weight: 800; }
-    small { font-family: $font-secondary; font-size: 0.72rem; color: var(--text-faint); }
+    strong { font-size: 0.95rem; font-weight: 800; overflow-wrap: anywhere; }
+    small { font-family: $font-secondary; font-size: 0.72rem; color: var(--text-faint); overflow-wrap: anywhere; }
     code { font-weight: 700; color: $primary; }
   }
 
@@ -124,7 +129,7 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
     small { display: block; font-size: 0.68rem; font-weight: 500; color: var(--text-faint); }
   }
 
-  &__nota { display: flex; gap: 6px; font-family: $font-secondary; font-size: 0.78rem; color: var(--text-soft); font-style: italic; }
+  &__nota { display: flex; gap: 6px; overflow-wrap: anywhere; font-family: $font-secondary; font-size: 0.78rem; color: var(--text-soft); font-style: italic; }
 
   &__fotos {
     display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
@@ -140,7 +145,13 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
 
   &__salida {
     display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: rgba($secondary, 0.08);
-    > p:first-child { display: flex; align-items: center; gap: 8px; font-family: $font-secondary; font-size: 0.82rem; i { color: darken($secondary, 10%); } }
+    min-width: 0;
+  }
+  &__salio {
+    display: flex; align-items: flex-start; gap: 8px; font-family: $font-secondary; font-size: 0.82rem;
+    i { flex-shrink: 0; margin-top: 3px; color: darken($secondary, 10%); }
+    span { flex: 1; min-width: 0; }
+    small { display: block; margin-top: 2px; font-size: 0.72rem; color: var(--text-soft); overflow-wrap: anywhere; }
   }
 
   &__acc { display: flex; flex-direction: column; gap: 8px; @media (min-width: 560px) { flex-direction: row; > * { flex: 1 1 0; } } }
