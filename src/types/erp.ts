@@ -73,6 +73,8 @@ export interface AsignacionInventario {
   venCodigo: string
   restringido: boolean
   productos: string[]
+  /** Bodega (bod_nombre) de la que vende; null = sin asignar (no puede enviar pedidos). */
+  bodega?: string | null
   actualizadoPor?: string
   updatedAt?: string
 }
