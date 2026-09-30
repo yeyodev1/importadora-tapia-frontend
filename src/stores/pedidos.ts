@@ -54,5 +54,12 @@ export const usePedidosStore = defineStore('pedidos', {
       if (i >= 0) this.data[i] = pedido
       return pedido
     },
+
+    async registrarRetraso(id: string, payload: { nuevaFecha: string; motivo: string }) {
+      const pedido = await pedidosService.registrarRetraso(id, payload)
+      const i = this.data.findIndex((p) => p._id === id)
+      if (i >= 0) this.data[i] = pedido
+      return pedido
+    },
   },
 })
