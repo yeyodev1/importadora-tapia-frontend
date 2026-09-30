@@ -62,7 +62,7 @@ class ErpService extends APIBase {
     return res.data.data
   }
 
-  async guardarAsignacionInventario(venCodigo: string, payload: { restringido: boolean; productos: string[] }): Promise<AsignacionInventario> {
+  async guardarAsignacionInventario(venCodigo: string, payload: { restringido: boolean; productos: string[]; bodega: string | null }): Promise<AsignacionInventario> {
     const res = await this.put<{ success: boolean; data: AsignacionInventario }>(`inventario/asignaciones/${venCodigo}`, payload)
     return res.data.data
   }
