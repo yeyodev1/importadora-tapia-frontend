@@ -42,6 +42,12 @@ function guardarVistas() {
   }
 }
 
+/** "2026-10-02" → "jue 2 oct" (sin correr la fecha por zona horaria). */
+export function fechaCorta(ymd: string): string {
+  const [y, m, d] = ymd.split('-').map(Number)
+  return new Date(y!, m! - 1, d!).toLocaleDateString('es-EC', { weekday: 'short', day: 'numeric', month: 'short' })
+}
+
 /** Qué le importa a cada rol: admin aprueba, bodega despacha, vendedor espera respuesta. */
 function eventoDe(p: Pedido, rol: string | null): AlertaPedido | null {
   const det = `${p.numero} · ${p.clienteNombre}`
@@ -50,6 +56,17 @@ function eventoDe(p: Pedido, rol: string | null): AlertaPedido | null {
   }
   if (rol === 'bodega' && p.estado === 'aprobado' && !p.despacho?.salidaAt) {
     return { clave: `${p._id}:aprobado`, titulo: 'Nueva orden para despachar', detalle: det, destino: '/bodega', tono: 'nuevo' }
+  }
+  // Retraso del despacho: le interesa al vendedor y a administración.
+  const retraso = !p.despacho?.salidaAt && p.retrasos?.length ? p.retrasos[p.retrasos.length - 1] : null
+  if (retraso && (rol === 'vendedor' || rol === 'admin')) {
+    return {
+      clave: `${p._id}:retraso:${p.retrasos!.length}`,
+      titulo: 'Despacho retrasado',
+      detalle: `${det} · sale el ${fechaCorta(retraso.nuevaFecha)}: ${retraso.motivo}`,
+      destino: '/pedidos',
+      tono: 'mal',
+    }
   }
   if (rol === 'vendedor' && p.estado === 'aprobado') {
     return { clave: `${p._id}:aprobado`, titulo: 'Tu pedido fue aprobado', detalle: det, destino: '/pedidos', tono: 'ok' }
