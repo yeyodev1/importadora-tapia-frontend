@@ -50,6 +50,12 @@ class PedidosService extends APIBase {
     return res.data.data
   }
 
+  /** Bodega registra que el pedido no sale hoy: nueva fecha y motivo. */
+  async registrarRetraso(id: string, payload: { nuevaFecha: string; motivo: string }): Promise<Pedido> {
+    const res = await this.post<OneResponse>(`pedidos/${id}/retraso`, payload)
+    return res.data.data
+  }
+
   /** Firma para subir la foto de la orden de pedido (OP) directo a Cloudinary. */
   async firmaSubida(): Promise<FirmaSubida> {
     const res = await this.post<{ success: boolean; data: FirmaSubida }>('pedidos/firma-subida', {})
