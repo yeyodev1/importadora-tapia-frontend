@@ -6,6 +6,7 @@ import SkeletonTable from '@/components/ui/SkeletonTable.vue'
 import DespachoCard from './despachos/DespachoCard.vue'
 import MarcarSalidaModal from './despachos/MarcarSalidaModal.vue'
 import RetrasoModal from './despachos/RetrasoModal.vue'
+import FiltrosDespacho, { type Rango } from './despachos/FiltrosDespacho.vue'
 import { usePedidosStore } from '@/stores/pedidos'
 import type { Pedido } from '@/types/erp'
 
@@ -17,6 +18,34 @@ const grupo = ref<Grupo>('por_despachar')
 const buscar = ref('')
 const seleccionado = ref<Pedido | null>(null)
 const retrasando = ref<Pedido | null>(null)
+const rango = ref<Rango>('todos')
+const bodega = ref('')
+const recientes = ref(true)
+
+const hayFiltros = computed(() => rango.value !== 'todos' || bodega.value !== '' || !!buscar.value.trim())
+function limpiarFiltros() {
+  rango.value = 'todos'
+  bodega.value = ''
+  buscar.value = ''
+}
+
+/** Bodegas que aparecen en los pedidos (Quito, Guayaquil…). */
+const bodegas = computed(() => [...new Set(pedidos.data.flatMap((p) => p.items.map((i) => i.bodega || '')).filter(Boolean))].sort())
+
+/** Fecha que manda en la lista: la salida si ya salió; si no, cuando se creó. */
+const fechaDe = (p: Pedido) => p.despacho?.salidaAt || p.createdAt
+
+function dentroDelRango(iso: string): boolean {
+  if (rango.value === 'todos') return true
+  const d = new Date(iso)
+  const hoy = new Date()
+  const inicioHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime()
+  const t = d.getTime()
+  if (rango.value === 'hoy') return t >= inicioHoy
+  if (rango.value === 'ayer') return t >= inicioHoy - 86400000 && t < inicioHoy
+  if (rango.value === 'semana') return t >= inicioHoy - 6 * 86400000
+  return d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth()
+}
 
 const GRUPOS: { v: Grupo; label: string; ayuda: string; icono: string; tono: string }[] = [
   { v: 'por_despachar', label: 'Por despachar', ayuda: 'Aprobados, listos para salir', icono: 'fa-truck-ramp-box', tono: 'is-primario' },
@@ -50,11 +79,9 @@ const lista = computed(() => {
   return pedidos.data
     .filter((p) => grupoDe(p) === grupo.value)
     .filter((p) => !q || p.clienteNombre.toLowerCase().includes(q) || p.numero.toLowerCase().includes(q))
-    .sort((a, b) =>
-      grupo.value === 'despachados'
-        ? (b.despacho?.salidaAt || '').localeCompare(a.despacho?.salidaAt || '')
-        : a.createdAt.localeCompare(b.createdAt),
-    )
+    .filter((p) => !bodega.value || p.items.some((i) => i.bodega === bodega.value))
+    .filter((p) => dentroDelRango(fechaDe(p)))
+    .sort((a, b) => (recientes.value ? fechaDe(b).localeCompare(fechaDe(a)) : fechaDe(a).localeCompare(fechaDe(b))))
 })
 
 // "En todo momento": se refresca cada minuto y al volver a la app.
@@ -109,8 +136,18 @@ onBeforeUnmount(() => {
       <input id="despachos-buscar" v-model="buscar" type="search" placeholder="Buscar por cliente o número de pedido…" />
     </label>
 
+    <FiltrosDespacho
+      v-model:rango="rango"
+      v-model:bodega="bodega"
+      v-model:recientes="recientes"
+      :bodegas="bodegas"
+      :hay-filtros="hayFiltros"
+      @limpiar="limpiarFiltros"
+    />
+
     <SkeletonTable v-if="pedidos.loading && !pedidos.fetchedAt" :cols="3" :rows="4" />
     <EmptyState v-else-if="pedidos.error" tone="error" title="No se pudo cargar" :message="pedidos.error" @retry="pedidos.fetch(true)" />
+    <EmptyState v-else-if="!lista.length && hayFiltros" title="Nada con estos filtros" message="Prueba otra fecha u otra bodega, o toca “Quitar filtros”." />
     <EmptyState v-else-if="!lista.length" :title="VACIO[grupo].titulo" :message="VACIO[grupo].mensaje" />
     <ul v-else class="lista">
       <li v-for="p in lista" :key="p._id">
@@ -161,7 +198,7 @@ onBeforeUnmount(() => {
 }
 
 .buscar {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 0 12px;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding: 0 12px;
   border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); color: var(--text-faint);
   input { flex: 1; min-width: 0; padding: 11px 0; border: none; background: transparent; font-family: $font-secondary; font-size: 0.88rem; color: var(--text);
     &:focus { outline: none; } }
