@@ -156,7 +156,7 @@ function decidir(p: Pedido, d: Decision) {
             <div v-if="userStore.isAdmin && esDecidible(p)" class="ped__acc">
               <button type="button" class="ok" @click="decidir(p, 'aprobado')">Aprobar</button>
               <button type="button" class="wait" @click="decidir(p, 'en_espera')">{{ p.estado === 'en_espera' ? 'Editar espera' : 'En espera' }}</button>
-              <button type="button" class="no" @click="decidir(p, 'rechazado')">Rechazar</button>
+              <button type="button" class="no" @click="decidir(p, 'rechazado')">No aprobar</button>
             </div>
           </div>
         </li>
