@@ -103,6 +103,8 @@ export interface AppUser {
   venCodigo: string | null
   /** Solo rol bodega: bod_nombre del ERP al que se limita (vacío = todas las bodegas). */
   bodega?: string
+  /** El admin pidió que ponga su propio correo; la app no deja seguir hasta cambiarlo. */
+  debeCambiarCorreo?: boolean
   createdAt?: string
 }
 
@@ -240,6 +242,7 @@ export interface LoginResponse {
     role: UserRole
     venCodigo: string | null
     bodega?: string
+    debeCambiarCorreo?: boolean
   }
 }
 
