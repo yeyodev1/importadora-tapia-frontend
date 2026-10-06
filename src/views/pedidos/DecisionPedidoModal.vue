@@ -28,19 +28,19 @@ const OPCIONES: Record<Decision, { label: string; icono: string; tono: string; a
     label: 'En espera',
     icono: 'fa-circle-pause',
     tono: 'is-aviso',
-    ayuda: 'Queda sin aprobar y el asesor ve tu mensaje. Luego podrás aprobarlo o rechazarlo.',
+    ayuda: 'Queda sin aprobar y el asesor ve tu mensaje. Luego podrás aprobarlo o no aprobarlo.',
     boton: 'Poner en espera',
     sugerencias: ['En espera hasta que el asesor respalde facturas pendientes del cliente'],
     placeholder: 'Mensaje para el asesor (obligatorio)',
   },
   rechazado: {
-    label: 'Rechazar',
+    label: 'No aprobar',
     icono: 'fa-ban',
     tono: 'is-peligro',
     ayuda: 'No se despacha. El motivo es opcional pero ayuda al asesor.',
-    boton: 'Rechazar pedido',
+    boton: 'No aprobar pedido',
     sugerencias: [],
-    placeholder: 'Motivo del rechazo (opcional)',
+    placeholder: 'Motivo (opcional)',
   },
 }
 
@@ -77,7 +77,7 @@ function usarSugerencia(s: string) {
 const comentario = computed(() => texto.value.trim())
 const puedeGuardar = computed(() => !guardando.value && (decision.value !== 'en_espera' || comentario.value.length >= 3))
 const textoBoton = computed(() => {
-  if (confirmando.value) return 'Sí, rechazar pedido'
+  if (confirmando.value) return 'Sí, no aprobar pedido'
   if (decision.value === 'en_espera' && yaEnEspera.value) return 'Actualizar mensaje'
   return opcion.value.boton
 })
