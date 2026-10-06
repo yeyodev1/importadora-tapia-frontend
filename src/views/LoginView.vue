@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, ref } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { erpService } from '@/services/erp.service'
 import { useUserStore } from '@/stores/user'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import PasswordField from '@/components/ui/PasswordField.vue'
 import type { ApiError } from '@/types'
 
+const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
@@ -15,10 +16,20 @@ const password = ref('')
 const loading = ref(false)
 const error = ref('')
 const shake = ref(false)
+/** Aviso al volver de restablecer la contraseña. */
+const aviso = ref('')
+
+onMounted(() => {
+  if (route.query.restablecida) {
+    aviso.value = 'Tu contraseña fue actualizada. Ya puedes iniciar sesión.'
+    router.replace({ path: '/login', query: {} })
+  }
+})
 
 async function submit() {
   if (loading.value) return
   error.value = ''
+  aviso.value = ''
   loading.value = true
   try {
     const res = await erpService.login(email.value, password.value)
@@ -46,6 +57,10 @@ async function submit() {
       <p class="login__subtitle">Panel comercial · vendedores y administración</p>
 
       <form novalidate @submit.prevent="submit">
+        <p v-if="aviso" class="login__ok" role="status">
+          <i class="fa-solid fa-circle-check"></i> {{ aviso }}
+        </p>
+
         <label class="login__field">
           <span>Correo</span>
           <input
@@ -61,6 +76,8 @@ async function submit() {
           <span>Contraseña</span>
           <PasswordField v-model="password" />
         </label>
+
+        <RouterLink to="/olvide-contrasena" class="login__forgot">¿Olvidaste tu contraseña?</RouterLink>
 
         <transition name="error">
           <p v-if="error" class="login__error" role="alert">{{ error }}</p>
@@ -181,6 +198,29 @@ async function submit() {
     background: $alert-error-bg;
     border-radius: 8px;
     padding: 9px 12px;
+  }
+
+  &__ok {
+    font-family: $font-secondary;
+    font-size: 0.78rem;
+    color: darken($alert-success, 12%);
+    background: $alert-success-bg;
+    border-radius: 8px;
+    padding: 9px 12px;
+  }
+
+  &__forgot {
+    align-self: flex-end;
+    margin-top: -6px;
+    font-family: $font-secondary;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: $primary;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 
   &__submit {
