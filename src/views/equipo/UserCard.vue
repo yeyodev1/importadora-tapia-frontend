@@ -4,7 +4,8 @@ import { initials } from '@/utils/format'
 import type { AppUser } from '@/types/erp'
 
 defineProps<{ user: AppUser; canDelete: boolean }>()
-defineEmits<{ edit: []; remove: [] }>()
+/** pedirCorreo: pedir (o cancelar el pedido) que la persona ponga su propio correo. */
+defineEmits<{ edit: []; remove: []; pedirCorreo: [] }>()
 </script>
 
 <template>
@@ -22,6 +23,10 @@ defineEmits<{ edit: []; remove: [] }>()
       </BaseBadge>
     </div>
 
+    <p v-if="user.debeCambiarCorreo" class="card__aviso">
+      <i class="fa-solid fa-envelope-circle-check"></i> Debe cambiar su correo
+    </p>
+
     <p v-if="user.venCodigo" class="card__erp">
       Vinculado al vendedor <b>código {{ user.venCodigo }}</b> del ERP
     </p>
@@ -32,6 +37,9 @@ defineEmits<{ edit: []; remove: [] }>()
 
     <div class="card__actions">
       <button type="button" @click="$emit('edit')">Editar / clave</button>
+      <button v-if="canDelete" type="button" :class="{ 'is-on': user.debeCambiarCorreo }" @click="$emit('pedirCorreo')">
+        {{ user.debeCambiarCorreo ? 'Cancelar pedido' : 'Pedir cambio de correo' }}
+      </button>
       <button v-if="canDelete" type="button" class="is-danger" @click="$emit('remove')">
         Eliminar
       </button>
@@ -113,16 +121,32 @@ defineEmits<{ edit: []; remove: [] }>()
     }
   }
 
+  &__aviso {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba($alert-warning, 0.14);
+    color: darken($alert-warning, 14%);
+    font-family: $font-secondary;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
   &__actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 12px;
     padding-top: 12px;
     border-top: 1px solid var(--border);
 
     button {
-      flex: 1;
-      padding: 8px 0;
+      flex: 1 1 calc(50% - 8px);
+      min-height: 36px;
+      padding: 8px 6px;
       border: 1px solid var(--border-strong);
       border-radius: 7px;
       background: var(--surface);
@@ -136,6 +160,11 @@ defineEmits<{ edit: []; remove: [] }>()
       &:hover {
         border-color: $primary;
         color: $primary;
+      }
+
+      &.is-on {
+        border-color: rgba($alert-warning, 0.5);
+        color: darken($alert-warning, 14%);
       }
 
       &.is-danger:hover {
