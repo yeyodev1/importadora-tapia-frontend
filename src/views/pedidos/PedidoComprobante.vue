@@ -13,7 +13,7 @@ const estadoTexto: Record<string, string> = {
   enviado: 'Pendiente de aprobación',
   en_espera: 'En espera',
   aprobado: 'Aprobado',
-  rechazado: 'Rechazado',
+  rechazado: 'No aprobado',
 }
 
 function imprimir() {
