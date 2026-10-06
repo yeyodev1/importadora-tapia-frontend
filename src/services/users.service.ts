@@ -19,6 +19,8 @@ export interface CreateUserPayload {
   role: UserRole
   venCodigo?: string
   name?: string
+  /** Solo rol bodega: bodega a la que se limita ('' = todas). */
+  bodega?: string
 }
 
 class UsersService extends APIBase {
@@ -34,7 +36,7 @@ class UsersService extends APIBase {
 
   async update(
     id: string,
-    payload: Partial<Pick<CreateUserPayload, 'email' | 'password' | 'name' | 'venCodigo'>>,
+    payload: Partial<Pick<CreateUserPayload, 'email' | 'password' | 'name' | 'venCodigo' | 'bodega'>>,
   ): Promise<AppUser> {
     const res = await this.patch<UserResponse>(`users/${id}`, payload)
     return res.data.data
