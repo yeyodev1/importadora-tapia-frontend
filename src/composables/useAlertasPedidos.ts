@@ -84,7 +84,7 @@ function eventoDe(p: Pedido, rol: string | null): AlertaPedido | null {
   }
   if (rol === 'vendedor' && p.estado === 'rechazado') {
     const det2 = p.motivoRechazo ? `${det} · ${p.motivoRechazo}` : det
-    return { clave: `${p._id}:rechazado`, titulo: 'Tu pedido fue rechazado', detalle: det2, destino: '/pedidos', tono: 'mal' }
+    return { clave: `${p._id}:rechazado`, titulo: 'Tu pedido no fue aprobado', detalle: det2, destino: '/pedidos', tono: 'mal' }
   }
   return null
 }
