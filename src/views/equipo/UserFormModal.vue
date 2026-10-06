@@ -6,6 +6,7 @@ import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import PasswordField from '@/components/ui/PasswordField.vue'
 import RolePicker from './RolePicker.vue'
 import VendedorPicker from './VendedorPicker.vue'
+import BodegaPicker from './BodegaPicker.vue'
 import type { AppUser, UserRole } from '@/types/erp'
 import type { ApiError } from '@/types'
 
@@ -27,6 +28,8 @@ const password = ref('')
 const role = ref<UserRole>('vendedor')
 const venCodigo = ref('')
 const name = ref('')
+/** Solo rol bodega: '' = todas las bodegas; si no, la bodega a la que se limita (ej. Quito). */
+const bodega = ref('')
 const saving = ref(false)
 const error = ref('')
 /** Al crear varias seguidas: el modal no se cierra y va listando las creadas. */
@@ -42,6 +45,7 @@ function resetForm(keepRole = false) {
   if (!keepRole) role.value = props.user?.role || 'vendedor'
   venCodigo.value = props.user?.venCodigo || props.presetVenCodigo || ''
   name.value = props.user?.name || ''
+  bodega.value = props.user?.bodega || ''
 }
 
 watch(
@@ -108,6 +112,7 @@ async function save() {
         name: name.value || undefined,
         password: password.value || undefined,
         venCodigo: role.value === 'vendedor' ? venCodigo.value : undefined,
+        bodega: role.value === 'bodega' ? bodega.value : undefined,
       })
       emit('saved')
       emit('close')
@@ -119,6 +124,7 @@ async function save() {
       role: role.value,
       venCodigo: role.value === 'vendedor' ? venCodigo.value : undefined,
       name: name.value || undefined,
+      bodega: role.value === 'bodega' ? bodega.value : undefined,
     })
     creadas.value.unshift({ email: user.email, name: user.name, emailSent })
     emit('saved')
@@ -136,7 +142,7 @@ async function save() {
   }
 }
 
-const pasoDatos = computed(() => (isEdit.value ? 'Datos' : role.value === 'vendedor' ? '3. Datos de acceso' : '2. Datos de acceso'))
+const pasoDatos = computed(() => (isEdit.value ? 'Datos' : role.value === 'admin' ? '2. Datos de acceso' : '3. Datos de acceso'))
 </script>
 
 <template>
@@ -148,7 +154,7 @@ const pasoDatos = computed(() => (isEdit.value ? 'Datos' : role.value === 'vende
             <div>
               <h2>{{ isEdit ? 'Editar cuenta' : 'Nueva cuenta de acceso' }}</h2>
               <p class="modal__hint">
-                <template v-if="isEdit">Cambia el correo, el nombre, la contraseña o el vendedor vinculado.</template>
+                <template v-if="isEdit">Cambia el correo, el nombre, la contraseña, el vendedor vinculado o la bodega.</template>
                 <template v-else>La persona recibirá un correo con su usuario y contraseña.</template>
               </p>
             </div>
@@ -180,6 +186,11 @@ const pasoDatos = computed(() => (isEdit.value ? 'Datos' : role.value === 'vende
                 :error="erp.vendedores.error"
                 @retry="erp.fetchVendedores(true)"
               />
+            </fieldset>
+
+            <fieldset v-if="role === 'bodega'">
+              <legend>{{ isEdit ? 'Bodega que atiende' : '2. ¿Qué bodega atiende?' }}</legend>
+              <BodegaPicker v-model="bodega" />
             </fieldset>
 
             <fieldset>
