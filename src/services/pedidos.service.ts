@@ -1,5 +1,5 @@
 import APIBase from './httpBase'
-import type { Pedido, NuevoPedido } from '@/types/erp'
+import type { Pedido, NuevoPedido, EstadoPedido } from '@/types/erp'
 import type { FirmaSubida } from '@/types/solicitudes'
 
 interface ListResponse {
@@ -22,12 +22,9 @@ class PedidosService extends APIBase {
     return res.data.data
   }
 
-  async setEstado(
-    id: string,
-    estado: 'aprobado' | 'rechazado' | 'enviado',
-    motivoRechazo?: string,
-  ): Promise<Pedido> {
-    const res = await this.patch<OneResponse>(`pedidos/${id}/estado`, { estado, motivoRechazo })
+  /** Decisión de administración. en_espera exige comentario; en rechazo el comentario es el motivo. */
+  async setEstado(id: string, estado: EstadoPedido, comentario?: string): Promise<Pedido> {
+    const res = await this.patch<OneResponse>(`pedidos/${id}/estado`, { estado, comentario })
     return res.data.data
   }
 
