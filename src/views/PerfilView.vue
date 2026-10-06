@@ -7,6 +7,7 @@ import { useCobrosStore } from '@/stores/cobros'
 import { erpService } from '@/services/erp.service'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import AjustesAlertas from './perfil/AjustesAlertas.vue'
+import CambiarCorreoForm from '@/components/cuenta/CambiarCorreoForm.vue'
 import { initials, formatMoney } from '@/utils/format'
 import type { AppUser } from '@/types/erp'
 
@@ -42,6 +43,11 @@ const miSaldo = computed(() =>
 )
 const misCobros = computed(() => cobros.data.length)
 
+/** Tras cambiar el correo, la tarjeta muestra el nuevo. */
+function correoGuardado(email: string) {
+  if (perfil.value) perfil.value = { ...perfil.value, email, debeCambiarCorreo: false }
+}
+
 function logout() {
   userStore.clear()
   router.push('/login')
@@ -61,6 +67,17 @@ function logout() {
         <span v-if="perfil?.venCodigo" class="card__cod">Vendedor ERP · código {{ perfil.venCodigo }}</span>
       </div>
       <button class="card__logout" type="button" @click="logout">Cerrar sesión</button>
+    </section>
+
+    <section class="correo">
+      <header>
+        <span class="correo__ico"><i class="fa-solid fa-envelope"></i></span>
+        <div>
+          <h3>Cambiar mi correo</h3>
+          <p>Es tu usuario para entrar al CRM. Tu contraseña no cambia.</p>
+        </div>
+      </header>
+      <CambiarCorreoForm @guardado="correoGuardado" />
     </section>
 
     <AjustesAlertas />
@@ -90,7 +107,7 @@ function logout() {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 24px; box-shadow: var(--shadow-card); margin-bottom: 16px;
   &__avatar {
-    display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%;
     background: var(--accent-soft); color: $primary; font-size: 1.2rem; font-weight: 800; flex-shrink: 0;
   }
   &__id { flex: 1; min-width: 0;
@@ -111,8 +128,23 @@ function logout() {
   }
   @media (max-width: 560px) { flex-wrap: wrap; &__logout { width: 100%; } }
 }
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 16px;
-  @media (max-width: 560px) { grid-template-columns: 1fr; } }
+.correo {
+  display: flex; flex-direction: column; gap: 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; box-shadow: var(--shadow-card); margin-bottom: 16px;
+  header { display: flex; align-items: center; gap: 14px;
+    h3 { font-size: 1rem; font-weight: 800; }
+    p { font-family: $font-secondary; font-size: 0.78rem; color: var(--text-soft); margin-top: 2px; }
+  }
+  &__ico {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 46px; height: 46px; border-radius: 12px; background: var(--accent-soft); color: $primary; font-size: 1.1rem;
+  }
+  :deep(.cc) { @media (min-width: 640px) { max-width: 420px; } }
+}
+.stats { display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px;
+  > .stat { flex: 1; min-width: 0; }
+  @media (min-width: 561px) { flex-direction: row; } }
 .stat {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 18px 20px; box-shadow: var(--shadow-card);
