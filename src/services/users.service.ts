@@ -21,6 +21,8 @@ export interface CreateUserPayload {
   name?: string
   /** Solo rol bodega: bodega a la que se limita ('' = todas). */
   bodega?: string
+  /** Pedir (true) o cancelar (false) que la persona cambie su correo. */
+  debeCambiarCorreo?: boolean
 }
 
 class UsersService extends APIBase {
@@ -36,7 +38,7 @@ class UsersService extends APIBase {
 
   async update(
     id: string,
-    payload: Partial<Pick<CreateUserPayload, 'email' | 'password' | 'name' | 'venCodigo' | 'bodega'>>,
+    payload: Partial<Pick<CreateUserPayload, 'email' | 'password' | 'name' | 'venCodigo' | 'bodega' | 'debeCambiarCorreo'>>,
   ): Promise<AppUser> {
     const res = await this.patch<UserResponse>(`users/${id}`, payload)
     return res.data.data
