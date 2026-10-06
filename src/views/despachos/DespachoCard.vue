@@ -23,7 +23,7 @@ const estado = computed((): { tone: Tono; label: string } => {
   const r = props.pedido.retrasos?.[props.pedido.retrasos.length - 1]
   if (props.pedido.estado === 'aprobado' && r) return { tone: 'warning', label: `Retrasado · sale ${fechaCorta(r.nuevaFecha)}` }
   if (props.pedido.estado === 'aprobado') return { tone: 'info', label: 'Aprobado · por despachar' }
-  if (props.pedido.estado === 'rechazado') return { tone: 'danger', label: 'Rechazado' }
+  if (props.pedido.estado === 'rechazado') return { tone: 'danger', label: 'No aprobado' }
   if (props.pedido.estado === 'en_espera') return { tone: 'warning', label: 'En espera' }
   return { tone: 'warning', label: 'Pendiente de revisión' }
 })
@@ -66,7 +66,7 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
       <i class="fa-solid fa-circle-pause" aria-hidden="true"></i> En espera de administración<template v-if="pedido.motivoEspera">: {{ pedido.motivoEspera }}</template>. No despachar todavía.
     </p>
     <p v-else-if="pedido.estado === 'rechazado'" class="dc__aviso is-error">
-      <i class="fa-solid fa-ban" aria-hidden="true"></i> Rechazado<template v-if="pedido.motivoRechazo">: {{ pedido.motivoRechazo }}</template>. No se despacha.
+      <i class="fa-solid fa-ban" aria-hidden="true"></i> No aprobado<template v-if="pedido.motivoRechazo">: {{ pedido.motivoRechazo }}</template>. No se despacha.
     </p>
 
     <RetrasoAviso :pedido="pedido" />
