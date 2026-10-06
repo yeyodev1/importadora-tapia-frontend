@@ -2,6 +2,8 @@
 import { ref } from 'vue'
 
 const model = defineModel<string>({ required: true })
+/** "new-password" en los formularios de cambio para que el navegador sugiera una nueva. */
+const { autocomplete = 'current-password' } = defineProps<{ autocomplete?: string }>()
 const show = ref(false)
 </script>
 
@@ -10,7 +12,7 @@ const show = ref(false)
     <input
       v-model="model"
       :type="show ? 'text' : 'password'"
-      autocomplete="current-password"
+      :autocomplete="autocomplete"
       placeholder="••••••••"
       required
     />
