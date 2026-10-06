@@ -24,6 +24,7 @@ const estado = computed((): { tone: Tono; label: string } => {
   if (props.pedido.estado === 'aprobado' && r) return { tone: 'warning', label: `Retrasado · sale ${fechaCorta(r.nuevaFecha)}` }
   if (props.pedido.estado === 'aprobado') return { tone: 'info', label: 'Aprobado · por despachar' }
   if (props.pedido.estado === 'rechazado') return { tone: 'danger', label: 'Rechazado' }
+  if (props.pedido.estado === 'en_espera') return { tone: 'warning', label: 'En espera' }
   return { tone: 'warning', label: 'Pendiente de revisión' }
 })
 
@@ -60,6 +61,9 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
 
     <p v-if="pedido.estado === 'enviado'" class="dc__aviso is-warn">
       <i class="fa-solid fa-hand" aria-hidden="true"></i> Esperando aprobación de administración. No despachar todavía.
+    </p>
+    <p v-else-if="pedido.estado === 'en_espera'" class="dc__aviso is-warn">
+      <i class="fa-solid fa-circle-pause" aria-hidden="true"></i> En espera de administración<template v-if="pedido.motivoEspera">: {{ pedido.motivoEspera }}</template>. No despachar todavía.
     </p>
     <p v-else-if="pedido.estado === 'rechazado'" class="dc__aviso is-error">
       <i class="fa-solid fa-ban" aria-hidden="true"></i> Rechazado<template v-if="pedido.motivoRechazo">: {{ pedido.motivoRechazo }}</template>. No se despacha.
