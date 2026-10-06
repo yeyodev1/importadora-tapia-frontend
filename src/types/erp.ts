@@ -101,6 +101,8 @@ export interface AppUser {
   name: string
   role: UserRole
   venCodigo: string | null
+  /** Solo rol bodega: bod_nombre del ERP al que se limita (vacío = todas las bodegas). */
+  bodega?: string
   createdAt?: string
 }
 
@@ -135,7 +137,16 @@ export interface NuevoCobro {
   observacion?: string
 }
 
-export type EstadoPedido = 'enviado' | 'aprobado' | 'rechazado'
+/** enviado = sin aprobación; en_espera = stand-by con mensaje de administración al asesor. */
+export type EstadoPedido = 'enviado' | 'aprobado' | 'rechazado' | 'en_espera'
+
+/** Cada decisión de administración sobre el pedido (aprobar, poner en espera, rechazar). */
+export interface CambioEstadoPedido {
+  estado: EstadoPedido
+  nota?: string
+  por: string
+  at: string
+}
 
 export interface PedidoItem {
   productoCodigo: string
@@ -167,6 +178,11 @@ export interface Pedido {
   updatedAt?: string
   observacion?: string
   motivoRechazo?: string
+  /** Comentario opcional de administración al aprobar (ej. "Transferencia OK"). */
+  comentarioAprobacion?: string
+  /** Mensaje al asesor mientras el pedido está en espera. */
+  motivoEspera?: string
+  historialEstado?: CambioEstadoPedido[]
   estado: EstadoPedido
   createdAt: string
 }
@@ -223,6 +239,7 @@ export interface LoginResponse {
     name: string
     role: UserRole
     venCodigo: string | null
+    bodega?: string
   }
 }
 
