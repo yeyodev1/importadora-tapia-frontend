@@ -7,6 +7,8 @@ export interface UserState {
   email: string | null
   role: UserRole | null
   venCodigo: string | null
+  /** Bodeguero limitado a una bodega (ej. Quito). null = todas. */
+  bodega: string | null
   isAuthenticated: boolean
 }
 
@@ -17,6 +19,7 @@ export const useUserStore = defineStore('user', {
     email: null,
     role: null,
     venCodigo: null,
+    bodega: null,
     isAuthenticated: false,
   }),
 
@@ -35,11 +38,21 @@ export const useUserStore = defineStore('user', {
       this.email = localStorage.getItem('user_email')
       this.role = (localStorage.getItem('user_role') as UserRole) || null
       this.venCodigo = localStorage.getItem('user_ven_codigo')
+      this.bodega = localStorage.getItem('user_bodega')
+    },
+
+    /** Actualiza la bodega asignada (al refrescar /auth/me sin volver a iniciar sesión). */
+    setBodega(bodega?: string | null) {
+      this.bodega = bodega || null
+      try {
+        if (this.bodega) localStorage.setItem('user_bodega', this.bodega)
+        else localStorage.removeItem('user_bodega')
+      } catch {}
     },
 
     login(
       token: string,
-      user: { id: string; name?: string; email?: string; role?: UserRole; venCodigo?: string | null },
+      user: { id: string; name?: string; email?: string; role?: UserRole; venCodigo?: string | null; bodega?: string },
     ) {
       try {
         localStorage.setItem('access_token', token)
@@ -49,12 +62,15 @@ export const useUserStore = defineStore('user', {
         if (user.role) localStorage.setItem('user_role', user.role)
         if (user.venCodigo) localStorage.setItem('user_ven_codigo', user.venCodigo)
         else localStorage.removeItem('user_ven_codigo')
+        if (user.bodega) localStorage.setItem('user_bodega', user.bodega)
+        else localStorage.removeItem('user_bodega')
       } catch {}
       this.id = user.id
       this.name = user.name || null
       this.email = user.email || null
       this.role = user.role || null
       this.venCodigo = user.venCodigo || null
+      this.bodega = user.bodega || null
       this.isAuthenticated = true
     },
 
@@ -64,6 +80,7 @@ export const useUserStore = defineStore('user', {
       this.email = null
       this.role = null
       this.venCodigo = null
+      this.bodega = null
       this.isAuthenticated = false
       try {
         for (const k of [
@@ -73,6 +90,7 @@ export const useUserStore = defineStore('user', {
           'user_email',
           'user_role',
           'user_ven_codigo',
+          'user_bodega',
         ]) {
           localStorage.removeItem(k)
         }
