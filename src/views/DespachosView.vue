@@ -55,14 +55,14 @@ function dentroDelRango(iso: string): boolean {
 const GRUPOS: { v: Grupo; label: string; ayuda: string; icono: string; tono: string }[] = [
   { v: 'por_despachar', label: 'Por despachar', ayuda: 'Aprobados, listos para salir', icono: 'fa-truck-ramp-box', tono: 'is-primario' },
   { v: 'revision', label: 'Pendientes de revisión', ayuda: 'Sin aprobar o en espera', icono: 'fa-hourglass-half', tono: 'is-aviso' },
-  { v: 'rechazados', label: 'Rechazados', ayuda: 'No se despachan', icono: 'fa-ban', tono: 'is-peligro' },
+  { v: 'rechazados', label: 'No aprobados', ayuda: 'No se despachan', icono: 'fa-ban', tono: 'is-peligro' },
   { v: 'despachados', label: 'Despachados', ayuda: 'Ya salieron de bodega', icono: 'fa-circle-check', tono: 'is-ok' },
 ]
 
 const VACIO: Record<Grupo, { titulo: string; mensaje: string }> = {
   por_despachar: { titulo: 'No hay pedidos por despachar', mensaje: 'Cuando administración apruebe un pedido aparecerá aquí.' },
   revision: { titulo: 'Nada pendiente de revisión', mensaje: 'Todos los pedidos enviados ya fueron revisados.' },
-  rechazados: { titulo: 'Sin pedidos rechazados', mensaje: 'Los pedidos rechazados por administración aparecen aquí.' },
+  rechazados: { titulo: 'Sin pedidos no aprobados', mensaje: 'Los pedidos no aprobados por administración aparecen aquí.' },
   despachados: { titulo: 'Aún no hay despachos', mensaje: 'Al marcar la salida de un pedido aparecerá aquí.' },
 }
 
