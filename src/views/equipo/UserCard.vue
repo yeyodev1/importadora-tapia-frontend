@@ -25,6 +25,10 @@ defineEmits<{ edit: []; remove: [] }>()
     <p v-if="user.venCodigo" class="card__erp">
       Vinculado al vendedor <b>código {{ user.venCodigo }}</b> del ERP
     </p>
+    <p v-if="user.role === 'bodega'" class="card__erp">
+      <template v-if="user.bodega">Solo la bodega <b>{{ user.bodega }}</b></template>
+      <template v-else>Todas las bodegas</template>
+    </p>
 
     <div class="card__actions">
       <button type="button" @click="$emit('edit')">Editar / clave</button>
