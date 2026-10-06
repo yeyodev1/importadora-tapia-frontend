@@ -8,6 +8,7 @@ import UserFormModal from './equipo/UserFormModal.vue'
 import UserCard from './equipo/UserCard.vue'
 import VendedoresSinCuenta from './equipo/VendedoresSinCuenta.vue'
 import ConfirmModal from '@/components/ui/ConfirmModal.vue'
+import PedirCambioCorreoModal from './equipo/PedirCambioCorreoModal.vue'
 import type { AppUser } from '@/types/erp'
 import type { ApiError } from '@/types'
 
@@ -22,6 +23,8 @@ const presetVenCodigo = ref<string | null>(null)
 const deleteError = ref('')
 const aEliminar = ref<AppUser | null>(null)
 const eliminando = ref(false)
+/** Usuario al que se le pide (o cancela) cambiar su correo. */
+const aPedirCorreo = ref<AppUser | null>(null)
 
 const admins = computed(() => usersStore.data.filter((u) => u.role === 'admin'))
 const vendedores = computed(() => usersStore.data.filter((u) => u.role === 'vendedor'))
@@ -119,12 +122,15 @@ async function eliminarConfirmado() {
             :can-delete="u.id !== sessionStore.id"
             @edit="openEdit(u)"
             @remove="pedirEliminar(u)"
+            @pedir-correo="aPedirCorreo = u"
           />
         </div>
       </section>
     </template>
 
     <UserFormModal :open="modalOpen" :user="editing" :preset-ven-codigo="presetVenCodigo" @close="modalOpen = false" />
+
+    <PedirCambioCorreoModal :user="aPedirCorreo" @close="aPedirCorreo = null" />
 
     <ConfirmModal
       :open="!!aEliminar"
