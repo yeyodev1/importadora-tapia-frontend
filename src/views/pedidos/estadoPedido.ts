@@ -7,7 +7,7 @@ export const LABEL_ESTADO: Record<EstadoPedido, string> = {
   enviado: 'Sin aprobación',
   en_espera: 'En espera',
   aprobado: 'Aprobado',
-  rechazado: 'Rechazado',
+  rechazado: 'No aprobado',
 }
 
 export const TONO_ESTADO: Record<EstadoPedido, TonoEstado> = {
