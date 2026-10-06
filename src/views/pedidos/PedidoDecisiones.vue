@@ -30,7 +30,7 @@ const esperaDesde = computed(() => {
       <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ pedido.comentarioAprobacion }}
     </p>
     <p v-if="pedido.estado === 'rechazado' && pedido.motivoRechazo" class="nota is-error">
-      <i class="fa-solid fa-ban" aria-hidden="true"></i> Rechazo: {{ pedido.motivoRechazo }}
+      <i class="fa-solid fa-ban" aria-hidden="true"></i> No aprobado: {{ pedido.motivoRechazo }}
     </p>
 
     <details v-if="historial.length" class="hist">
