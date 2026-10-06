@@ -8,10 +8,15 @@ import MarcarSalidaModal from './despachos/MarcarSalidaModal.vue'
 import RetrasoModal from './despachos/RetrasoModal.vue'
 import FiltrosDespacho, { type Rango } from './despachos/FiltrosDespacho.vue'
 import { usePedidosStore } from '@/stores/pedidos'
+import { useUserStore } from '@/stores/user'
+import { erpService } from '@/services/erp.service'
 import type { Pedido } from '@/types/erp'
 
 /** Bodega: pedidos por despachar, en revisión, rechazados y despachados. Se actualiza solo. */
 const pedidos = usePedidosStore()
+const userStore = useUserStore()
+/** Bodeguero limitado a una bodega (ej. Quito): el backend ya filtra sus pedidos. */
+const miBodega = computed(() => (userStore.isBodega ? userStore.bodega : null))
 
 type Grupo = 'por_despachar' | 'revision' | 'rechazados' | 'despachados'
 const grupo = ref<Grupo>('por_despachar')
@@ -30,7 +35,7 @@ function limpiarFiltros() {
 }
 
 /** Bodegas que aparecen en los pedidos (Quito, Guayaquil…). */
-const bodegas = computed(() => [...new Set(pedidos.data.flatMap((p) => p.items.map((i) => i.bodega || '')).filter(Boolean))].sort())
+const bodegas = computed(() => miBodega.value ? [] : [...new Set(pedidos.data.flatMap((p) => p.items.map((i) => i.bodega || '')).filter(Boolean))].sort())
 
 /** Fecha que manda en la lista: la salida si ya salió; si no, cuando se creó. */
 const fechaDe = (p: Pedido) => p.despacho?.salidaAt || p.createdAt
@@ -49,7 +54,7 @@ function dentroDelRango(iso: string): boolean {
 
 const GRUPOS: { v: Grupo; label: string; ayuda: string; icono: string; tono: string }[] = [
   { v: 'por_despachar', label: 'Por despachar', ayuda: 'Aprobados, listos para salir', icono: 'fa-truck-ramp-box', tono: 'is-primario' },
-  { v: 'revision', label: 'Pendientes de revisión', ayuda: 'Aún no los aprueba administración', icono: 'fa-hourglass-half', tono: 'is-aviso' },
+  { v: 'revision', label: 'Pendientes de revisión', ayuda: 'Sin aprobar o en espera', icono: 'fa-hourglass-half', tono: 'is-aviso' },
   { v: 'rechazados', label: 'Rechazados', ayuda: 'No se despachan', icono: 'fa-ban', tono: 'is-peligro' },
   { v: 'despachados', label: 'Despachados', ayuda: 'Ya salieron de bodega', icono: 'fa-circle-check', tono: 'is-ok' },
 ]
@@ -91,6 +96,8 @@ function refrescar() {
 }
 onMounted(() => {
   pedidos.fetch(true)
+  // Refresca la bodega asignada sin pedir que vuelva a iniciar sesión.
+  if (userStore.isBodega) erpService.me().then((u) => userStore.setBodega(u.bodega)).catch(() => {})
   timer = window.setInterval(refrescar, 60000)
   document.addEventListener('visibilitychange', refrescar)
 })
@@ -110,6 +117,11 @@ onBeforeUnmount(() => {
       :refreshing="pedidos.loading && !!pedidos.fetchedAt"
       @refresh="pedidos.fetch(true)"
     />
+
+    <p v-if="miBodega" class="mi-bodega" role="status">
+      <i class="fa-solid fa-warehouse" aria-hidden="true"></i> Bodega: <b>{{ miBodega }}</b>
+      <small>Solo ves los pedidos de esta bodega.</small>
+    </p>
 
     <div class="grupos" role="tablist" aria-label="Estado de los pedidos">
       <button
@@ -161,6 +173,13 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
+.mi-bodega {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; padding: 9px 12px; border-radius: 10px;
+  background: var(--accent-soft); color: $primary; font-family: $font-secondary; font-size: 0.82rem;
+  b { font-weight: 800; }
+  small { flex-basis: 100%; font-size: 0.7rem; color: var(--text-soft); }
+}
+
 .grupos { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
 
 .grupo {
