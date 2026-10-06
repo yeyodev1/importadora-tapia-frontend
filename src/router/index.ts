@@ -8,6 +8,18 @@ const routes: Array<RouteRecordRaw> = [
     meta: { title: 'Iniciar sesión' },
   },
   {
+    path: '/olvide-contrasena',
+    name: 'OlvideContrasena',
+    component: () => import('../views/OlvideContrasenaView.vue'),
+    meta: { title: 'Recuperar contraseña', public: true },
+  },
+  {
+    path: '/restablecer-contrasena',
+    name: 'RestablecerContrasena',
+    component: () => import('../views/RestablecerContrasenaView.vue'),
+    meta: { title: 'Nueva contraseña', public: true },
+  },
+  {
     path: '/',
     component: () => import('../layout/DashboardLayout.vue'),
     meta: { requiresAuth: true },
@@ -124,6 +136,9 @@ const router = createRouter({
 })
 
 router.beforeEach((to, _from, next) => {
+  // Recuperar / restablecer contraseña: abiertas con o sin sesión y sin redirecciones por rol.
+  if (to.meta?.public) return next()
+
   const hasToken = !!localStorage.getItem('access_token')
   const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth)
 
