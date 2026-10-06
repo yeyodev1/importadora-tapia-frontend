@@ -6,6 +6,8 @@ import AppTopbar from './components/AppTopbar.vue'
 import ErpStatusBanner from './components/ErpStatusBanner.vue'
 import VisitaEnCursoBanner from './components/VisitaEnCursoBanner.vue'
 import AlertasPedidos from './components/AlertasPedidos.vue'
+import CambioCorreoObligatorio from './components/CambioCorreoObligatorio.vue'
+import { erpService } from '@/services/erp.service'
 import { useUserStore } from '@/stores/user'
 import { useSystemStore } from '@/stores/system'
 
@@ -25,6 +27,11 @@ function onTokenExpired() {
 onMounted(() => {
   userStore.hydrate()
   window.addEventListener('auth:token-expired', onTokenExpired)
+  // Datos frescos de la cuenta: aplica al instante el pedido de cambiar el
+  // correo (y cambios de bodega) sin tener que volver a iniciar sesión.
+  if (userStore.isAuthenticated) {
+    erpService.me().then((u) => userStore.aplicarPerfil(u)).catch(() => {})
+  }
   // Verifica el estado del ERP al entrar y cada 60 segundos.
   system.check()
   estadoTimer = window.setInterval(() => system.check(), 60000)
@@ -45,6 +52,7 @@ onBeforeUnmount(() => {
       <ErpStatusBanner />
       <VisitaEnCursoBanner />
       <AlertasPedidos />
+      <CambioCorreoObligatorio />
 
       <main class="layout__content">
         <RouterView v-slot="{ Component }">
