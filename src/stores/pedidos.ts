@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { pedidosService } from '@/services/pedidos.service'
-import type { Pedido, NuevoPedido } from '@/types/erp'
+import type { Pedido, NuevoPedido, EstadoPedido } from '@/types/erp'
 import type { ApiError } from '@/types'
 
 export const usePedidosStore = defineStore('pedidos', {
@@ -32,8 +32,9 @@ export const usePedidosStore = defineStore('pedidos', {
       return pedido
     },
 
-    async setEstado(id: string, estado: 'aprobado' | 'rechazado' | 'enviado', motivo?: string) {
-      const pedido = await pedidosService.setEstado(id, estado, motivo)
+    /** Aprobar, poner en espera o rechazar, con el comentario para el asesor. */
+    async setEstado(id: string, estado: EstadoPedido, comentario?: string) {
+      const pedido = await pedidosService.setEstado(id, estado, comentario)
       const i = this.data.findIndex((p) => p._id === id)
       if (i >= 0) this.data[i] = pedido
       return pedido
