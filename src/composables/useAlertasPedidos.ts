@@ -68,11 +68,23 @@ function eventoDe(p: Pedido, rol: string | null): AlertaPedido | null {
       tono: 'mal',
     }
   }
+  if (rol === 'vendedor' && p.estado === 'en_espera') {
+    // La clave cambia con cada decisión: si administración edita el mensaje, vuelve a sonar.
+    return {
+      clave: `${p._id}:en_espera:${p.historialEstado?.length ?? 0}`,
+      titulo: 'Pedido en espera',
+      detalle: p.motivoEspera ? `${det} · ${p.motivoEspera}` : det,
+      destino: '/pedidos',
+      tono: 'mal',
+    }
+  }
   if (rol === 'vendedor' && p.estado === 'aprobado') {
-    return { clave: `${p._id}:aprobado`, titulo: 'Tu pedido fue aprobado', detalle: det, destino: '/pedidos', tono: 'ok' }
+    const det2 = p.comentarioAprobacion ? `${det} · ${p.comentarioAprobacion}` : det
+    return { clave: `${p._id}:aprobado`, titulo: 'Tu pedido fue aprobado', detalle: det2, destino: '/pedidos', tono: 'ok' }
   }
   if (rol === 'vendedor' && p.estado === 'rechazado') {
-    return { clave: `${p._id}:rechazado`, titulo: 'Tu pedido fue rechazado', detalle: det, destino: '/pedidos', tono: 'mal' }
+    const det2 = p.motivoRechazo ? `${det} · ${p.motivoRechazo}` : det
+    return { clave: `${p._id}:rechazado`, titulo: 'Tu pedido fue rechazado', detalle: det2, destino: '/pedidos', tono: 'mal' }
   }
   return null
 }
