@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import RetrasoAviso from './RetrasoAviso.vue'
+import EntregasParciales from './EntregasParciales.vue'
+import { avanceEntregas, esEntregaParcial } from './entregas'
 import { fechaCorta } from '@/composables/useAlertasPedidos'
 import { formatDate, formatQty, formatPlazo } from '@/utils/format'
 import type { Pedido } from '@/types/erp'
@@ -16,11 +18,15 @@ const fotosOp = computed(() => {
   if (props.pedido.fotos?.length) return props.pedido.fotos
   return props.pedido.fotoUrl ? [props.pedido.fotoUrl] : []
 })
+const avance = computed(() => avanceEntregas(props.pedido))
+const parcial = computed(() => esEntregaParcial(props.pedido))
+const faltanTotal = computed(() => avance.value.reduce((s, a) => s + a.falta, 0))
 const salida = computed(() => (props.pedido.despacho?.salidaAt ? new Date(props.pedido.despacho.salidaAt) : null))
 
 const estado = computed((): { tone: Tono; label: string } => {
   if (salida.value) return { tone: 'success', label: 'Despachado' }
   const r = props.pedido.retrasos?.[props.pedido.retrasos.length - 1]
+  if (props.pedido.estado === 'aprobado' && parcial.value) return { tone: 'warning', label: `Entrega parcial · faltan ${formatQty(faltanTotal.value)}` }
   if (props.pedido.estado === 'aprobado' && r) return { tone: 'warning', label: `Retrasado · sale ${fechaCorta(r.nuevaFecha)}` }
   if (props.pedido.estado === 'aprobado') return { tone: 'info', label: 'Aprobado · por despachar' }
   if (props.pedido.estado === 'rechazado') return { tone: 'danger', label: 'No aprobado' }
@@ -45,7 +51,10 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
 
     <ul class="dc__items">
       <li v-for="(it, i) in pedido.items" :key="i">
-        <span class="dc__qty">{{ formatQty(it.cantidad) }}</span>
+        <span class="dc__qty">
+          {{ formatQty(it.cantidad) }}
+          <small v-if="pedido.entregas?.length" class="dc__avance">salió {{ formatQty(avance[i]!.salio) }}</small>
+        </span>
         <span class="dc__uni">{{ it.unidad }}</span>
         <span class="dc__prod">{{ it.productoNombre }}<small v-if="it.bodega">{{ it.bodega }}</small></span>
       </li>
@@ -73,6 +82,7 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
       <i class="fa-solid fa-ban" aria-hidden="true"></i> Anulado<template v-if="pedido.anulacion">: {{ pedido.anulacion.motivo }}</template>. No se despacha.
     </p>
 
+    <EntregasParciales :pedido="pedido" />
     <RetrasoAviso :pedido="pedido" />
 
     <div v-if="salida" class="dc__salida">
@@ -93,7 +103,7 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
     </div>
     <div v-else-if="pedido.estado === 'aprobado'" class="dc__acc">
       <button type="button" class="dc__btn" @click="emit('despachar')">
-        <i class="fa-solid fa-truck-ramp-box" aria-hidden="true"></i> Marcar salida
+        <i class="fa-solid fa-truck-ramp-box" aria-hidden="true"></i> {{ parcial ? 'Marcar otra entrega' : 'Marcar salida' }}
       </button>
       <button type="button" class="dc__btn is-sec" @click="emit('retrasar')">
         <i class="fa-solid fa-calendar-xmark" aria-hidden="true"></i> No sale hoy · registrar retraso
@@ -137,6 +147,7 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
     small { display: block; font-size: 0.68rem; font-weight: 500; color: var(--text-faint); }
   }
 
+  &__avance { display: block; font-size: 0.64rem; font-weight: 600; color: darken($alert-warning, 25%); white-space: nowrap; }
   &__nota { display: flex; gap: 6px; overflow-wrap: anywhere; font-family: $font-secondary; font-size: 0.78rem; color: var(--text-soft); font-style: italic; }
 
   &__fotos {
