@@ -165,7 +165,7 @@ function decidir(p: Pedido, d: Decision) {
             <!-- Pedido vivo que aún no sale: admin baja cantidades; admin o su asesor lo anulan. -->
             <div v-if="esModificable(p)" class="ped__mod">
               <button v-if="userStore.isAdmin" type="button" @click="ajustando = p">
-                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Ajustar cantidades
+                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Editar cantidades
               </button>
               <button type="button" class="no" @click="anulando = p">
                 <i class="fa-solid fa-ban" aria-hidden="true"></i> Anular pedido
