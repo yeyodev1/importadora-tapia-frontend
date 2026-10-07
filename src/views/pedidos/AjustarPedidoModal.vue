@@ -7,9 +7,9 @@ import type { Pedido } from '@/types/erp'
 import type { ApiError } from '@/types'
 
 /**
- * Administración baja cantidades o quita líneas de un pedido que aún no sale
- * (p.ej. el cliente pidió 100 y solo le tocan 97). Solo se puede bajar: para
- * subir, el asesor envía otro pedido. Se le avisa al asesor.
+ * Administración cambia cantidades o quita líneas de un pedido que aún no sale
+ * (p.ej. el cliente pidió 100 y solo le tocan 97, o ahora quiere más). Subir
+ * se valida contra el stock disponible y el cupo del asesor. Se le avisa al asesor.
  */
 const props = defineProps<{ pedido: Pedido | null }>()
 const emit = defineEmits<{ close: [] }>()
@@ -34,7 +34,7 @@ watch(
 const lineas = computed(() =>
   (props.pedido?.items || []).map((it, i) => {
     const nueva = Number(cantidades.value[i])
-    const valida = Number.isFinite(nueva) && nueva >= 0 && nueva <= it.cantidad
+    const valida = Number.isFinite(nueva) && nueva >= 0
     return { it, nueva, valida, cambia: valida && nueva !== it.cantidad }
   }),
 )
@@ -72,13 +72,13 @@ async function guardar() {
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ajustar-titulo">
           <header class="modal__head">
             <div>
-              <h2 id="ajustar-titulo">Ajustar cantidades {{ pedido.numero }}</h2>
+              <h2 id="ajustar-titulo">Editar cantidades {{ pedido.numero }}</h2>
               <p class="modal__hint">{{ pedido.clienteNombre }} · {{ pedido.vendedorNombre }}</p>
             </div>
             <button type="button" class="modal__x" aria-label="Cerrar" @click="emit('close')"><i class="fa-solid fa-xmark"></i></button>
           </header>
 
-          <p class="ayuda">Solo se puede bajar la cantidad. Lo que quites vuelve al stock disponible y al cupo del asesor.</p>
+          <p class="ayuda">Sube o baja la cantidad. Lo que bajes vuelve al stock y al cupo del asesor; lo que subas debe haber en stock y caber en su cupo.</p>
 
           <ul class="lineas">
             <li v-for="(l, i) in lineas" :key="i" class="linea" :class="{ 'is-cambia': l.cambia, 'is-error': !l.valida }">
@@ -91,7 +91,6 @@ async function guardar() {
                 type="number"
                 inputmode="decimal"
                 min="0"
-                :max="l.it.cantidad"
                 class="linea__qty"
                 :aria-label="`Nueva cantidad de ${l.it.productoNombre}`"
               />
@@ -100,11 +99,11 @@ async function guardar() {
               </button>
             </li>
           </ul>
-          <small v-if="invalida" class="falta">Cada cantidad debe estar entre 0 y lo que pidió el asesor.</small>
+          <small v-if="invalida" class="falta">Revisa las cantidades: deben ser 0 o más.</small>
           <small v-else-if="vacio" class="falta">El pedido quedaría vacío: mejor anúlalo.</small>
 
           <div class="field">
-            <textarea v-model="nota" rows="2" class="obs" maxlength="500" placeholder="Mensaje para el asesor (opcional), p. ej. «Solo te tocan 97 por el cupo»"></textarea>
+            <textarea v-model="nota" rows="2" class="obs" maxlength="500" placeholder="Mensaje para el asesor (opcional), p. ej. «El cliente subió a 120»"></textarea>
           </div>
 
           <p class="total">Nuevo total <b>{{ formatMoney(nuevoTotal) }}</b> <span>antes {{ formatMoney(pedido.total) }}</span></p>
