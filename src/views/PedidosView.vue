@@ -13,7 +13,9 @@ import RetrasoAviso from './despachos/RetrasoAviso.vue'
 import DecisionPedidoModal, { type Decision } from './pedidos/DecisionPedidoModal.vue'
 import FiltroEstadoPedidos, { type FiltroEstado } from './pedidos/FiltroEstadoPedidos.vue'
 import PedidoDecisiones from './pedidos/PedidoDecisiones.vue'
-import { LABEL_ESTADO, TONO_ESTADO, esDecidible } from './pedidos/estadoPedido'
+import AnularPedidoModal from './pedidos/AnularPedidoModal.vue'
+import AjustarPedidoModal from './pedidos/AjustarPedidoModal.vue'
+import { LABEL_ESTADO, TONO_ESTADO, esDecidible, esModificable } from './pedidos/estadoPedido'
 import { formatMoney, formatDate, formatQty, formatPlazo } from '@/utils/format'
 import type { Pedido } from '@/types/erp'
 
@@ -24,6 +26,8 @@ const expandido = ref<string | null>(null)
 const comprobante = ref<Pedido | null>(null)
 const decidiendo = ref<Pedido | null>(null)
 const accion = ref<Decision>('aprobado')
+const anulando = ref<Pedido | null>(null)
+const ajustando = ref<Pedido | null>(null)
 
 onMounted(() => pedidos.fetch())
 
@@ -32,7 +36,7 @@ const FILTRO_KEY = `pedidos_filtro_${userStore.role || 'x'}`
 function filtroGuardado(): FiltroEstado {
   try {
     const v = localStorage.getItem(FILTRO_KEY) as FiltroEstado | null
-    if (v && ['todos', 'enviado', 'en_espera', 'aprobado', 'rechazado'].includes(v)) return v
+    if (v && ['todos', 'enviado', 'en_espera', 'aprobado', 'rechazado', 'anulado'].includes(v)) return v
   } catch {
     /* sin almacenamiento */
   }
@@ -48,7 +52,7 @@ watch(filtro, (v) => {
 })
 
 const conteo = computed(() => {
-  const c: Record<FiltroEstado, number> = { todos: pedidos.data.length, enviado: 0, en_espera: 0, aprobado: 0, rechazado: 0 }
+  const c: Record<FiltroEstado, number> = { todos: pedidos.data.length, enviado: 0, en_espera: 0, aprobado: 0, rechazado: 0, anulado: 0 }
   for (const p of pedidos.data) c[p.estado] = (c[p.estado] || 0) + 1
   return c
 })
@@ -158,6 +162,15 @@ function decidir(p: Pedido, d: Decision) {
               <button type="button" class="wait" @click="decidir(p, 'en_espera')">{{ p.estado === 'en_espera' ? 'Editar espera' : 'En espera' }}</button>
               <button type="button" class="no" @click="decidir(p, 'rechazado')">No aprobar</button>
             </div>
+            <!-- Pedido vivo que aún no sale: admin baja cantidades; admin o su asesor lo anulan. -->
+            <div v-if="esModificable(p)" class="ped__mod">
+              <button v-if="userStore.isAdmin" type="button" @click="ajustando = p">
+                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Ajustar cantidades
+              </button>
+              <button type="button" class="no" @click="anulando = p">
+                <i class="fa-solid fa-ban" aria-hidden="true"></i> Anular pedido
+              </button>
+            </div>
           </div>
         </li>
       </ul>
@@ -166,6 +179,8 @@ function decidir(p: Pedido, d: Decision) {
     <PedidoFormModal :open="modalOpen" @close="modalOpen = false" />
     <PedidoComprobante :open="!!comprobante" :pedido="comprobante" @close="comprobante = null" />
     <DecisionPedidoModal :pedido="decidiendo" :accion="accion" @close="decidiendo = null" />
+    <AnularPedidoModal :pedido="anulando" @close="anulando = null" />
+    <AjustarPedidoModal :pedido="ajustando" @close="ajustando = null" />
   </div>
 </template>
 
@@ -205,6 +220,12 @@ function decidir(p: Pedido, d: Decision) {
     button { flex: 1; min-width: 0; min-height: 42px; padding: 9px 6px; border-radius: 8px; font-family: $font-principal; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1px solid var(--border-strong); background: var(--surface); }
     .ok:hover { border-color: $secondary; color: darken($secondary, 10%); background: rgba($secondary, 0.08); }
     .wait:hover { border-color: $alert-warning; color: darken($alert-warning, 25%); background: $alert-warning-bg; }
+    .no:hover { border-color: $alert-error; color: $alert-error; background: $alert-error-bg; } }
+  &__mod { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
+    button { flex: 1 1 160px; min-height: 40px; padding: 8px 10px; border-radius: 8px; border: 1px dashed var(--border-strong);
+      background: transparent; font-family: $font-principal; font-size: 0.76rem; font-weight: 700; color: var(--text-soft); cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      &:hover { border-color: $primary; color: $primary; } }
     .no:hover { border-color: $alert-error; color: $alert-error; background: $alert-error-bg; } }
 }
 .item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border);
