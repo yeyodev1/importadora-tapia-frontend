@@ -10,6 +10,8 @@ import PedidoFormModal from './pedidos/PedidoFormModal.vue'
 import PedidoComprobante from './pedidos/PedidoComprobante.vue'
 import PedidoFotosEditor from './pedidos/PedidoFotosEditor.vue'
 import RetrasoAviso from './despachos/RetrasoAviso.vue'
+import EntregasParciales from './despachos/EntregasParciales.vue'
+import { esEntregaParcial } from './despachos/entregas'
 import DecisionPedidoModal, { type Decision } from './pedidos/DecisionPedidoModal.vue'
 import FiltroEstadoPedidos, { type FiltroEstado } from './pedidos/FiltroEstadoPedidos.vue'
 import PedidoDecisiones from './pedidos/PedidoDecisiones.vue'
@@ -130,6 +132,7 @@ function decidir(p: Pedido, d: Decision) {
             <div class="ped__right">
               <b>{{ formatMoney(p.total) }}</b>
               <BaseBadge v-if="p.despacho?.salidaAt" tone="success">Despachado</BaseBadge>
+              <BaseBadge v-else-if="p.estado === 'aprobado' && esEntregaParcial(p)" tone="warning">Entrega parcial</BaseBadge>
               <BaseBadge v-else-if="p.estado === 'aprobado' && p.retrasos?.length" tone="warning">Retrasado</BaseBadge>
               <BaseBadge v-else :tone="TONO_ESTADO[p.estado] || 'info'">{{ LABEL_ESTADO[p.estado] || p.estado }}</BaseBadge>
               <i class="fa-solid fa-chevron-down ped__caret" :class="{ 'is-open': expandido === p._id }"></i>
@@ -154,6 +157,7 @@ function decidir(p: Pedido, d: Decision) {
               · {{ p.despacho.despachadoPor }}
               <template v-if="p.despacho.fotos.length"> · {{ p.despacho.fotos.length }} foto{{ p.despacho.fotos.length === 1 ? '' : 's' }}</template>
             </p>
+            <EntregasParciales :pedido="p" class="ped__ent" />
             <RetrasoAviso :pedido="p" />
             <PedidoFotosEditor :pedido="p" />
 
@@ -167,7 +171,8 @@ function decidir(p: Pedido, d: Decision) {
               <button v-if="userStore.isAdmin" type="button" @click="ajustando = p">
                 <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Editar cantidades
               </button>
-              <button type="button" class="no" @click="anulando = p">
+              <!-- Si ya salió una parte no se anula: se ajustan las cantidades a lo entregado. -->
+              <button v-if="!p.entregas?.length" type="button" class="no" @click="anulando = p">
                 <i class="fa-solid fa-ban" aria-hidden="true"></i> Anular pedido
               </button>
             </div>
@@ -213,6 +218,7 @@ function decidir(p: Pedido, d: Decision) {
   &__comp.is-foto { text-decoration: none; margin-left: 8px; }
   &__desp { display: block; overflow-wrap: anywhere; margin-top: 12px; i { margin-right: 6px; } padding: 9px 12px; border-radius: 9px;
     background: rgba($secondary, 0.1); font-family: $font-secondary; font-size: 0.78rem; color: darken($secondary, 18%); }
+  &__ent { margin-top: 12px; }
   &__obs { font-family: $font-secondary; font-size: 0.76rem; color: var(--text-soft); margin-top: 8px; font-style: italic; }
   &__espera { display: block; margin-top: 4px; font-family: $font-secondary; font-size: 0.72rem; font-style: normal; font-weight: 600;
     color: darken($alert-warning, 25%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
