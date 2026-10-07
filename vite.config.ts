@@ -40,6 +40,7 @@ export default defineConfig({
     },
   },
   build: {
-    target: 'esnext',
+    // Celulares de asesores con iOS/Android viejos: con 'esnext' la app quedaba en blanco.
+    target: ['es2020', 'safari15', 'chrome87', 'firefox78', 'edge88'],
   },
 })
