@@ -40,6 +40,20 @@ export const usePedidosStore = defineStore('pedidos', {
       return pedido
     },
 
+    async anular(id: string, motivo: string) {
+      const pedido = await pedidosService.anular(id, motivo)
+      const i = this.data.findIndex((p) => p._id === id)
+      if (i >= 0) this.data[i] = pedido
+      return pedido
+    },
+
+    async ajustar(id: string, cantidades: number[], nota?: string) {
+      const pedido = await pedidosService.ajustar(id, cantidades, nota)
+      const i = this.data.findIndex((p) => p._id === id)
+      if (i >= 0) this.data[i] = pedido
+      return pedido
+    },
+
     /** Guarda las fotos de la OP de un pedido ya enviado. */
     async setFotos(id: string, fotos: string[]) {
       const pedido = await pedidosService.setFotos(id, fotos)
