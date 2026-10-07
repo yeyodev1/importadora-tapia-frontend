@@ -14,6 +14,7 @@ const CHIPS: { v: FiltroEstado; label: string; tono: string }[] = [
   { v: 'en_espera', label: 'En espera', tono: 'is-aviso' },
   { v: 'aprobado', label: 'Aprobados', tono: 'is-ok' },
   { v: 'rechazado', label: 'No aprobados', tono: 'is-peligro' },
+  { v: 'anulado', label: 'Anulados', tono: 'is-peligro' },
 ]
 </script>
 
