@@ -8,6 +8,7 @@ export const LABEL_ESTADO: Record<EstadoPedido, string> = {
   en_espera: 'En espera',
   aprobado: 'Aprobado',
   rechazado: 'No aprobado',
+  anulado: 'Anulado',
 }
 
 export const TONO_ESTADO: Record<EstadoPedido, TonoEstado> = {
@@ -15,10 +16,15 @@ export const TONO_ESTADO: Record<EstadoPedido, TonoEstado> = {
   en_espera: 'warning',
   aprobado: 'success',
   rechazado: 'danger',
+  anulado: 'danger',
 }
 
 /** Estados en los que administración todavía puede decidir. */
 export const esDecidible = (p: Pedido) => p.estado === 'enviado' || p.estado === 'en_espera'
+
+/** Pedido vivo que aún no sale de bodega: se puede anular o bajarle cantidades. */
+export const esModificable = (p: Pedido) =>
+  !p.despacho?.salidaAt && p.estado !== 'rechazado' && p.estado !== 'anulado'
 
 /** Hora corta para el historial: "06 oct, 10:42". */
 export const horaCorta = (iso: string) =>
