@@ -24,6 +24,7 @@ const estado = computed((): { tone: Tono; label: string } => {
   if (props.pedido.estado === 'aprobado' && r) return { tone: 'warning', label: `Retrasado · sale ${fechaCorta(r.nuevaFecha)}` }
   if (props.pedido.estado === 'aprobado') return { tone: 'info', label: 'Aprobado · por despachar' }
   if (props.pedido.estado === 'rechazado') return { tone: 'danger', label: 'No aprobado' }
+  if (props.pedido.estado === 'anulado') return { tone: 'danger', label: 'Anulado' }
   if (props.pedido.estado === 'en_espera') return { tone: 'warning', label: 'En espera' }
   return { tone: 'warning', label: 'Pendiente de revisión' }
 })
@@ -67,6 +68,9 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
     </p>
     <p v-else-if="pedido.estado === 'rechazado'" class="dc__aviso is-error">
       <i class="fa-solid fa-ban" aria-hidden="true"></i> No aprobado<template v-if="pedido.motivoRechazo">: {{ pedido.motivoRechazo }}</template>. No se despacha.
+    </p>
+    <p v-else-if="pedido.estado === 'anulado'" class="dc__aviso is-error">
+      <i class="fa-solid fa-ban" aria-hidden="true"></i> Anulado<template v-if="pedido.anulacion">: {{ pedido.anulacion.motivo }}</template>. No se despacha.
     </p>
 
     <RetrasoAviso :pedido="pedido" />
