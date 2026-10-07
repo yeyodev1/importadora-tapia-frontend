@@ -6,6 +6,7 @@ import StatCard from '@/components/ui/StatCard.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import TopDebtorsPanel from './dashboard/TopDebtorsPanel.vue'
 import UpcomingInvoicesPanel from './dashboard/UpcomingInvoicesPanel.vue'
+import PendientesCorreo from './equipo/PendientesCorreo.vue'
 import { formatMoney } from '@/utils/format'
 import { esVencida } from '@/utils/cartera'
 
@@ -74,6 +75,8 @@ const money = (n: number) => formatMoney(n)
       :refreshing="refreshing"
       @refresh="loadAll(true)"
     />
+
+    <PendientesCorreo v-if="userStore.isAdmin" enlace />
 
     <section class="stats">
       <StatCard
