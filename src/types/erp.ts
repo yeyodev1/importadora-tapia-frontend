@@ -155,6 +155,14 @@ export interface NuevoCobro {
  */
 export type EstadoPedido = 'enviado' | 'aprobado' | 'rechazado' | 'en_espera' | 'anulado'
 
+export interface EntregaPedido {
+  at: string
+  por: string
+  cantidades: { productoCodigo: string; bodega?: string; cantidad: number }[]
+  fotos: string[]
+  observacion?: string
+}
+
 /** Administración bajó cantidades o quitó líneas de un pedido que aún no sale. */
 export interface AjustePedido {
   at: string
@@ -196,6 +204,8 @@ export interface Pedido {
   fotos?: string[]
   /** Salida de bodega (hora del servidor, fotos y quién la marcó). */
   despacho?: { salidaAt: string; fotos: string[]; observacion?: string; despachadoPor: string }
+  /** Salidas de bodega cuando el cliente recibe por partes; la que completa el pedido llena `despacho`. */
+  entregas?: EntregaPedido[]
   /** Retrasos del despacho; el último es el vigente. nuevaFecha = "YYYY-MM-DD". */
   retrasos?: { registradoAt: string; nuevaFecha: string; motivo: string; registradoPor: string }[]
   updatedAt?: string
