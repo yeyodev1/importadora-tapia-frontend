@@ -8,14 +8,40 @@ import { formatQty } from '@/utils/format'
 import { erpService } from '@/services/erp.service'
 import { useUserStore } from '@/stores/user'
 import AvisoAsignacion from './inventario/AvisoAsignacion.vue'
-import type { AsignacionInventario } from '@/types/erp'
+import CuposModal from './inventario/CuposModal.vue'
+import type { AsignacionInventario, CupoProducto } from '@/types/erp'
 
 const erp = useErpStore()
 const userStore = useUserStore()
 const asignacion = ref<AsignacionInventario | null>(null)
 
+// Cupos por asesor (admin: todos; vendedor: los suyos). Si falla, la tabla sigue igual.
+const cupos = ref<Record<string, CupoProducto>>({})
+const cupoEditando = ref<{ pro_codigo: string; pro_nombre: string } | null>(null)
+async function cargarCupos() {
+  try {
+    cupos.value = Object.fromEntries((await erpService.getCupos()).map((c) => [c.proCodigo, c]))
+  } catch {
+    cupos.value = {}
+  }
+}
+function cupoGuardado(proCodigo: string, c: CupoProducto | null) {
+  const m = { ...cupos.value }
+  if (c) m[proCodigo] = c
+  else delete m[proCodigo]
+  cupos.value = m
+}
+/** Texto corto del cupo: admin ve el total repartido; vendedor lo que le queda. */
+function textoCupo(proCodigo: string): string | null {
+  const c = cupos.value[proCodigo]
+  if (!c?.cupos.length) return null
+  if (userStore.isAdmin) return `Cupo ${formatQty(c.cupos.reduce((s, x) => s + x.cantidad, 0))} · ${c.cupos.length} asesor${c.cupos.length === 1 ? '' : 'es'}`
+  return `Tu cupo: te quedan ${formatQty(c.cupos[0]!.queda)} de ${formatQty(c.cupos[0]!.cantidad)}`
+}
+
 onMounted(async () => {
   erp.fetchInventario()
+  if (userStore.isAdmin || userStore.isVendedor) cargarCupos()
   if (userStore.isVendedor) {
     try {
       asignacion.value = await erpService.miAsignacionInventario()
@@ -45,6 +71,7 @@ const columns: Column[] = [
   { key: 'bod_nombre', label: 'Bodega', sortable: true },
   { key: 'stock_actual', label: 'Stock', align: 'right', sortable: true },
   { key: 'solo_contado', label: 'Venta', align: 'center' },
+  { key: 'cupo', label: 'Cupo', align: 'center' },
 ]
 
 /** Admin: marcar/desmarcar "solo contado" (aplica a todas las bodegas del producto). */
@@ -152,6 +179,20 @@ function stockLabel(value: string): string {
         </BaseBadge>
       </template>
 
+      <template #cell-cupo="{ row }">
+        <button
+          v-if="userStore.isAdmin"
+          type="button"
+          class="contado-btn"
+          :class="{ 'is-cupo': textoCupo(row.pro_codigo) }"
+          @click="cupoEditando = row"
+        >
+          <i class="fa-solid fa-users-line"></i>
+          {{ textoCupo(row.pro_codigo) || 'Sin cupo' }}
+        </button>
+        <BaseBadge v-else-if="textoCupo(row.pro_codigo)" tone="warning">{{ textoCupo(row.pro_codigo) }}</BaseBadge>
+      </template>
+
       <template #mobile-card="{ row }">
         <div class="mcard">
           <div class="mcard__head">
@@ -174,9 +215,27 @@ function stockLabel(value: string): string {
             {{ row.solo_contado ? 'Solo contado' : 'Crédito o contado' }}
           </button>
           <span v-else-if="row.solo_contado" class="contado-btn is-on"><i class="fa-solid fa-money-bill-wave"></i> Solo contado</span>
+          <button
+            v-if="userStore.isAdmin"
+            type="button"
+            class="contado-btn"
+            :class="{ 'is-cupo': textoCupo(row.pro_codigo) }"
+            @click="cupoEditando = row"
+          >
+            <i class="fa-solid fa-users-line"></i>
+            {{ textoCupo(row.pro_codigo) || 'Sin cupo' }}
+          </button>
+          <span v-else-if="textoCupo(row.pro_codigo)" class="contado-btn is-cupo"><i class="fa-solid fa-users-line"></i> {{ textoCupo(row.pro_codigo) }}</span>
         </div>
       </template>
     </DataTable>
+
+    <CuposModal
+      :producto="cupoEditando"
+      :cupo="cupoEditando ? cupos[cupoEditando.pro_codigo] || null : null"
+      @close="cupoEditando = null"
+      @guardado="cupoGuardado"
+    />
   </div>
 </template>
 
@@ -201,7 +260,9 @@ function stockLabel(value: string): string {
   &:hover { border-color: $primary; color: var(--text); }
   &.is-on { border-color: rgba($alert-warning, 0.7); background: $alert-warning-bg; color: darken($alert-warning, 25%); i { color: darken($alert-warning, 15%); } }
   &:disabled { opacity: 0.6; cursor: wait; }
+  &.is-cupo { border-color: rgba($primary, 0.5); background: var(--accent-soft); color: $primary; i { color: $primary; } }
 }
+.mcard .contado-btn { margin-top: 8px; margin-right: 6px; }
 
 .chips {
   display: flex;
