@@ -11,6 +11,7 @@ import type {
   EstadoErp,
   AsignacionInventario,
   ReglaProducto,
+  CupoProducto,
 } from '@/types/erp'
 
 class ErpService extends APIBase {
@@ -75,6 +76,20 @@ class ErpService extends APIBase {
   /** Marca o desmarca un producto como "solo contado" (admin). */
   async guardarReglaProducto(proCodigo: string, payload: { soloContado: boolean; proNombre?: string }): Promise<ReglaProducto> {
     const res = await this.put<{ success: boolean; data: ReglaProducto }>(`inventario/reglas/${encodeURIComponent(proCodigo)}`, payload)
+    return res.data.data
+  }
+
+  async getCupos(): Promise<CupoProducto[]> {
+    const res = await this.get<{ success: boolean; data: CupoProducto[] }>('inventario/cupos')
+    return res.data.data
+  }
+
+  /** Fija los cupos del producto; `reiniciar` vuelve a contar desde ahora (llegó mercadería). Lista vacía = sin cupo. */
+  async guardarCupos(
+    proCodigo: string,
+    payload: { proNombre?: string; reiniciar?: boolean; cupos: { venCodigo: string; nombre?: string; cantidad: number }[] },
+  ): Promise<CupoProducto | null> {
+    const res = await this.put<{ success: boolean; data: CupoProducto | null }>(`inventario/cupos/${encodeURIComponent(proCodigo)}`, payload)
     return res.data.data
   }
 
