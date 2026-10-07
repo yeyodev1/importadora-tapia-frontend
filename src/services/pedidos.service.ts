@@ -54,7 +54,7 @@ class PedidosService extends APIBase {
   }
 
   /** Bodega marca la salida (o, si ya salió, actualiza fotos y observación). */
-  async marcarDespacho(id: string, payload: { fotos: string[]; observacion?: string }): Promise<Pedido> {
+  async marcarDespacho(id: string, payload: { fotos: string[]; observacion?: string; cantidades?: number[] }): Promise<Pedido> {
     const res = await this.patch<OneResponse>(`pedidos/${id}/despacho`, payload)
     return res.data.data
   }
