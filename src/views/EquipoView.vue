@@ -9,6 +9,7 @@ import UserCard from './equipo/UserCard.vue'
 import VendedoresSinCuenta from './equipo/VendedoresSinCuenta.vue'
 import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import PedirCambioCorreoModal from './equipo/PedirCambioCorreoModal.vue'
+import PendientesCorreo from './equipo/PendientesCorreo.vue'
 import type { AppUser } from '@/types/erp'
 import type { ApiError } from '@/types'
 
@@ -83,6 +84,8 @@ async function eliminarConfirmado() {
       la asignación de sus clientes vienen del <b>ERP de Tapia (solo lectura)</b>: para cambiar
       clientes de un vendedor se hace en ese sistema, no aquí.
     </p>
+
+    <PendientesCorreo />
 
     <VendedoresSinCuenta v-if="usersStore.fetchedAt" @crear="openCreate" />
 
