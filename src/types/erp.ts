@@ -63,6 +63,16 @@ export interface ReglaProducto {
   updatedAt?: string
 }
 
+/** Cupo por asesor de un producto escaso; `usado` cuenta lo pedido desde `desde`. */
+export interface CupoProducto {
+  proCodigo: string
+  proNombre: string
+  desde: string
+  cupos: { venCodigo: string; nombre?: string; cantidad: number; usado: number; queda: number }[]
+  actualizadoPor?: string
+  updatedAt?: string
+}
+
 export interface InventarioDisponible extends InventarioItem {
   reservado: number
   disponible: number
@@ -139,8 +149,19 @@ export interface NuevoCobro {
   observacion?: string
 }
 
-/** enviado = sin aprobación; en_espera = stand-by con mensaje de administración al asesor. */
-export type EstadoPedido = 'enviado' | 'aprobado' | 'rechazado' | 'en_espera'
+/**
+ * enviado = sin aprobación; en_espera = stand-by con mensaje de administración al asesor;
+ * anulado = se cayó después de enviado o aprobado (libera stock y cupo, no se despacha).
+ */
+export type EstadoPedido = 'enviado' | 'aprobado' | 'rechazado' | 'en_espera' | 'anulado'
+
+/** Administración bajó cantidades o quitó líneas de un pedido que aún no sale. */
+export interface AjustePedido {
+  at: string
+  por: string
+  nota?: string
+  cambios: { productoNombre: string; antes: number; despues: number }[]
+}
 
 /** Cada decisión de administración sobre el pedido (aprobar, poner en espera, rechazar). */
 export interface CambioEstadoPedido {
@@ -185,6 +206,9 @@ export interface Pedido {
   /** Mensaje al asesor mientras el pedido está en espera. */
   motivoEspera?: string
   historialEstado?: CambioEstadoPedido[]
+  /** Quién anuló el pedido (admin o su vendedor), por qué y cuándo. */
+  anulacion?: { motivo: string; por: string; rol: string; at: string }
+  ajustes?: AjustePedido[]
   estado: EstadoPedido
   createdAt: string
 }
