@@ -14,6 +14,7 @@ const estadoTexto: Record<string, string> = {
   en_espera: 'En espera',
   aprobado: 'Aprobado',
   rechazado: 'No aprobado',
+  anulado: 'Anulado',
 }
 
 function imprimir() {
@@ -160,7 +161,7 @@ Estado: ${estadoTexto[p.estado] || p.estado}${p.estado === 'en_espera' && p.moti
   &__meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0;
     div span { display: block; font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.06em; color: #8593B0; }
     div b { font-size: 0.84rem; font-weight: 700; } }
-  &__estado { &.is-aprobado { color: #17916C; } &.is-rechazado { color: #E5484D; } &.is-enviado { color: #1A7BB0; } &.is-en_espera { color: #B7791F; } }
+  &__estado { &.is-aprobado { color: #17916C; } &.is-rechazado, &.is-anulado { color: #E5484D; } &.is-enviado { color: #1A7BB0; } &.is-en_espera { color: #B7791F; } }
   &__table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.8rem;
     th { text-align: left; font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.05em; color: #8593B0; padding: 8px 6px; border-bottom: 1px solid #E5E9F0; }
     th:not(:first-child), td.r { text-align: right; }
