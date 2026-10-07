@@ -54,6 +54,34 @@ function eventoDe(p: Pedido, rol: string | null): AlertaPedido | null {
   if (rol === 'admin' && p.estado === 'enviado') {
     return { clave: `${p._id}:enviado`, titulo: 'Nueva orden de pedido', detalle: `${det} · por aprobar`, destino: '/pedidos', tono: 'nuevo' }
   }
+  // Anulado: le interesa a la otra parte (asesor ↔ administración) y a bodega si ya lo tenía por despachar.
+  if (p.estado === 'anulado' && p.anulacion) {
+    const fueAprobado = p.historialEstado?.some((h) => h.estado === 'aprobado')
+    const leInteresa =
+      (rol === 'vendedor' && p.anulacion.rol !== 'vendedor') ||
+      (rol === 'admin' && p.anulacion.rol !== 'admin') ||
+      (rol === 'bodega' && fueAprobado)
+    if (!leInteresa) return null
+    return {
+      clave: `${p._id}:anulado`,
+      titulo: rol === 'bodega' ? 'Orden anulada: no despachar' : 'Pedido anulado',
+      detalle: `${det} · ${p.anulacion.motivo}`,
+      destino: rol === 'bodega' ? '/bodega' : '/pedidos',
+      tono: 'mal',
+    }
+  }
+  // Administración bajó cantidades: el asesor debe avisarle al cliente.
+  const ajuste = p.ajustes?.length ? p.ajustes[p.ajustes.length - 1] : null
+  if (rol === 'vendedor' && ajuste && !p.despacho?.salidaAt && Date.now() - new Date(ajuste.at).getTime() < 86400000) {
+    const cambios = ajuste.cambios.map((c) => `${c.productoNombre} ${c.antes}→${c.despues}`).join(', ')
+    return {
+      clave: `${p._id}:ajuste:${p.ajustes!.length}`,
+      titulo: 'Tu pedido cambió de cantidades',
+      detalle: `${det} · ${cambios}${ajuste.nota ? ` · ${ajuste.nota}` : ''}`,
+      destino: '/pedidos',
+      tono: 'mal',
+    }
+  }
   if (rol === 'bodega' && p.estado === 'aprobado' && !p.despacho?.salidaAt) {
     return { clave: `${p._id}:aprobado`, titulo: 'Nueva orden para despachar', detalle: det, destino: '/bodega', tono: 'nuevo' }
   }
