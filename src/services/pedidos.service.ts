@@ -28,6 +28,18 @@ class PedidosService extends APIBase {
     return res.data.data
   }
 
+  /** Anula un pedido que aún no sale (admin o su vendedor). Libera stock y cupo. */
+  async anular(id: string, motivo: string): Promise<Pedido> {
+    const res = await this.post<OneResponse>(`pedidos/${id}/anular`, { motivo })
+    return res.data.data
+  }
+
+  /** Admin baja cantidades: una cantidad por línea, en el mismo orden (0 = quitar la línea). */
+  async ajustar(id: string, cantidades: number[], nota?: string): Promise<Pedido> {
+    const res = await this.patch<OneResponse>(`pedidos/${id}/items`, { cantidades, nota })
+    return res.data.data
+  }
+
   /** Reemplaza las fotos de la OP de un pedido ya enviado (agregar, cambiar o quitar). */
   async setFotos(id: string, fotos: string[]): Promise<Pedido> {
     const res = await this.patch<OneResponse>(`pedidos/${id}/fotos`, { fotos })
