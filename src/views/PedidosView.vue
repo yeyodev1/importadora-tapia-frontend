@@ -17,7 +17,8 @@ import FiltroEstadoPedidos, { type FiltroEstado } from './pedidos/FiltroEstadoPe
 import PedidoDecisiones from './pedidos/PedidoDecisiones.vue'
 import AnularPedidoModal from './pedidos/AnularPedidoModal.vue'
 import AjustarPedidoModal from './pedidos/AjustarPedidoModal.vue'
-import { LABEL_ESTADO, TONO_ESTADO, esDecidible, esModificable } from './pedidos/estadoPedido'
+import RechazoClienteModal from './pedidos/RechazoClienteModal.vue'
+import { LABEL_ESTADO, TONO_ESTADO, esDecidible, esModificable, puedeRechazoCliente } from './pedidos/estadoPedido'
 import { formatMoney, formatDate, formatQty, formatPlazo } from '@/utils/format'
 import { pedidosService } from '@/services/pedidos.service'
 import type { Pedido } from '@/types/erp'
@@ -31,6 +32,7 @@ const decidiendo = ref<Pedido | null>(null)
 const accion = ref<Decision>('aprobado')
 const anulando = ref<Pedido | null>(null)
 const ajustando = ref<Pedido | null>(null)
+const rechazando = ref<Pedido | null>(null)
 
 onMounted(() => pedidos.fetch())
 
@@ -39,7 +41,7 @@ const FILTRO_KEY = `pedidos_filtro_${userStore.role || 'x'}`
 function filtroGuardado(): FiltroEstado {
   try {
     const v = localStorage.getItem(FILTRO_KEY) as FiltroEstado | null
-    if (v && ['todos', 'enviado', 'en_espera', 'aprobado', 'rechazado', 'anulado'].includes(v)) return v
+    if (v && ['todos', 'enviado', 'en_espera', 'aprobado', 'rechazado', 'anulado', 'rechazado_cliente'].includes(v)) return v
   } catch {
     /* sin almacenamiento */
   }
@@ -136,7 +138,7 @@ function limpiarFiltros() {
 }
 
 const conteo = computed(() => {
-  const c: Record<FiltroEstado, number> = { todos: enBodega.value.length, enviado: 0, en_espera: 0, aprobado: 0, rechazado: 0, anulado: 0 }
+  const c: Record<FiltroEstado, number> = { todos: enBodega.value.length, enviado: 0, en_espera: 0, aprobado: 0, rechazado: 0, anulado: 0, rechazado_cliente: 0 }
   for (const p of enBodega.value) c[p.estado] = (c[p.estado] || 0) + 1
   return c
 })
@@ -254,7 +256,8 @@ function decidir(p: Pedido, d: Decision) {
             </div>
             <div class="ped__right">
               <b>{{ formatMoney(p.total) }}</b>
-              <BaseBadge v-if="p.despacho?.salidaAt" tone="success">Despachado</BaseBadge>
+              <BaseBadge v-if="p.estado === 'rechazado_cliente'" tone="danger">Rechazado por el cliente</BaseBadge>
+              <BaseBadge v-else-if="p.despacho?.salidaAt" tone="success">Despachado</BaseBadge>
               <BaseBadge v-else-if="p.estado === 'aprobado' && esEntregaParcial(p)" tone="warning">Entrega parcial</BaseBadge>
               <BaseBadge v-else-if="p.estado === 'aprobado' && p.retrasos?.length" tone="warning">Retrasado</BaseBadge>
               <BaseBadge v-else :tone="TONO_ESTADO[p.estado] || 'info'">{{ LABEL_ESTADO[p.estado] || p.estado }}</BaseBadge>
@@ -289,6 +292,12 @@ function decidir(p: Pedido, d: Decision) {
               <button type="button" class="wait" @click="decidir(p, 'en_espera')">{{ p.estado === 'en_espera' ? 'Editar espera' : 'En espera' }}</button>
               <button type="button" class="no" @click="decidir(p, 'rechazado')">No aprobar</button>
             </div>
+            <!-- Aprobado (salido o no) que el cliente no recibió: admin o su asesor lo registran. -->
+            <div v-if="puedeRechazoCliente(p) && (userStore.isAdmin || p.vendedorId === userStore.id)" class="ped__mod">
+              <button type="button" class="no" @click="rechazando = p">
+                <i class="fa-solid fa-person-walking-arrow-loop-left" aria-hidden="true"></i> El cliente no lo recibió
+              </button>
+            </div>
             <!-- Pedido vivo que aún no sale: admin baja cantidades; admin o su asesor lo anulan. -->
             <div v-if="esModificable(p)" class="ped__mod">
               <button v-if="userStore.isAdmin" type="button" @click="ajustando = p">
@@ -309,6 +318,7 @@ function decidir(p: Pedido, d: Decision) {
     <DecisionPedidoModal :pedido="decidiendo" :accion="accion" @close="decidiendo = null" />
     <AnularPedidoModal :pedido="anulando" @close="anulando = null" />
     <AjustarPedidoModal :pedido="ajustando" @close="ajustando = null" />
+    <RechazoClienteModal :pedido="rechazando" @close="rechazando = null" />
   </div>
 </template>
 

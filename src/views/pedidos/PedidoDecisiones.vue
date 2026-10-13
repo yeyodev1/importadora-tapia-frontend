@@ -36,6 +36,12 @@ const esperaDesde = computed(() => {
       <i class="fa-solid fa-ban" aria-hidden="true"></i> Anulado: {{ pedido.anulacion.motivo }}
       <small>{{ pedido.anulacion.por }} · {{ horaCorta(pedido.anulacion.at) }}</small>
     </p>
+    <p v-if="pedido.estado === 'rechazado_cliente' && pedido.rechazoCliente" class="nota is-error">
+      <i class="fa-solid fa-person-walking-arrow-loop-left" aria-hidden="true"></i>
+      Rechazado por el cliente: {{ pedido.rechazoCliente.motivo }}
+      <template v-if="pedido.rechazoCliente.yaHabiaSalido"> · la mercadería regresa a bodega</template>
+      <small>{{ pedido.rechazoCliente.por }} · {{ horaCorta(pedido.rechazoCliente.at) }}</small>
+    </p>
     <div v-for="(a, i) in pedido.ajustes || []" :key="`aj${i}`" class="nota is-aviso">
       <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Cantidades ajustadas:
       <span v-for="(c, j) in a.cambios" :key="j">{{ j ? ', ' : ' ' }}{{ c.productoNombre }} {{ c.antes }} → {{ c.despues || 'quitado' }}</span>
@@ -84,6 +90,6 @@ const esperaDesde = computed(() => {
     small { font-size: 0.68rem; color: var(--text-faint); }
     &.is-en_espera b { color: darken($alert-warning, 25%); }
     &.is-aprobado b { color: darken($secondary, 14%); }
-    &.is-rechazado b, &.is-anulado b { color: darken($alert-error, 6%); } }
+    &.is-rechazado b, &.is-anulado b, &.is-rechazado_cliente b { color: darken($alert-error, 6%); } }
 }
 </style>

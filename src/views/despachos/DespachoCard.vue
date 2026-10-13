@@ -10,7 +10,7 @@ import type { Pedido } from '@/types/erp'
 
 /** Tarjeta de un pedido para bodega: qué sale, en qué estado está y su salida. */
 const props = defineProps<{ pedido: Pedido }>()
-const emit = defineEmits<{ despachar: []; retrasar: [] }>()
+const emit = defineEmits<{ despachar: []; retrasar: []; rechazoCliente: [] }>()
 
 type Tono = 'success' | 'info' | 'danger' | 'warning'
 
@@ -24,6 +24,7 @@ const faltanTotal = computed(() => avance.value.reduce((s, a) => s + a.falta, 0)
 const salida = computed(() => (props.pedido.despacho?.salidaAt ? new Date(props.pedido.despacho.salidaAt) : null))
 
 const estado = computed((): { tone: Tono; label: string } => {
+  if (props.pedido.estado === 'rechazado_cliente') return { tone: 'danger', label: 'Rechazado por el cliente' }
   if (salida.value) return { tone: 'success', label: 'Despachado' }
   const r = props.pedido.retrasos?.[props.pedido.retrasos.length - 1]
   if (props.pedido.estado === 'aprobado' && parcial.value) return { tone: 'warning', label: `Entrega parcial · faltan ${formatQty(faltanTotal.value)}` }
@@ -78,6 +79,12 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
     <p v-else-if="pedido.estado === 'rechazado'" class="dc__aviso is-error">
       <i class="fa-solid fa-ban" aria-hidden="true"></i> No aprobado<template v-if="pedido.motivoRechazo">: {{ pedido.motivoRechazo }}</template>. No se despacha.
     </p>
+    <p v-else-if="pedido.estado === 'rechazado_cliente'" class="dc__aviso is-error">
+      <i class="fa-solid fa-person-walking-arrow-loop-left" aria-hidden="true"></i>
+      El cliente no lo recibió<template v-if="pedido.rechazoCliente">: {{ pedido.rechazoCliente.motivo }}</template>.
+      <template v-if="pedido.rechazoCliente?.yaHabiaSalido">La mercadería regresa a bodega.</template>
+      <template v-else>No se despacha.</template>
+    </p>
     <p v-else-if="pedido.estado === 'anulado'" class="dc__aviso is-error">
       <i class="fa-solid fa-ban" aria-hidden="true"></i> Anulado<template v-if="pedido.anulacion">: {{ pedido.anulacion.motivo }}</template>. No se despacha.
     </p>
@@ -97,8 +104,11 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
           <img :src="miniatura(u)" :alt="`Foto ${k + 1} del despacho`" loading="lazy" />
         </a>
       </div>
-      <button type="button" class="dc__btn is-sec" @click="emit('despachar')">
+      <button v-if="pedido.estado === 'aprobado'" type="button" class="dc__btn is-sec" @click="emit('despachar')">
         <i class="fa-solid fa-camera" aria-hidden="true"></i> Agregar o cambiar fotos
+      </button>
+      <button v-if="pedido.estado === 'aprobado'" type="button" class="dc__btn is-sec is-peligro" @click="emit('rechazoCliente')">
+        <i class="fa-solid fa-person-walking-arrow-loop-left" aria-hidden="true"></i> El cliente no lo recibió
       </button>
     </div>
     <div v-else-if="pedido.estado === 'aprobado'" class="dc__acc">
@@ -108,11 +118,15 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
       <button type="button" class="dc__btn is-sec" @click="emit('retrasar')">
         <i class="fa-solid fa-calendar-xmark" aria-hidden="true"></i> No sale hoy · registrar retraso
       </button>
+      <button type="button" class="dc__btn is-sec is-peligro" @click="emit('rechazoCliente')">
+        <i class="fa-solid fa-person-walking-arrow-loop-left" aria-hidden="true"></i> El cliente no lo recibió
+      </button>
     </div>
   </article>
 </template>
 
 <style lang="scss" scoped>
+.dc__btn.is-sec.is-peligro { color: $alert-error; &:hover { border-color: $alert-error; background: $alert-error-bg; } }
 .dc {
   display: flex;
   flex-direction: column;

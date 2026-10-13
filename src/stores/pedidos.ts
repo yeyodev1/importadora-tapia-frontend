@@ -40,6 +40,13 @@ export const usePedidosStore = defineStore('pedidos', {
       return pedido
     },
 
+    async rechazoCliente(id: string, motivo: string) {
+      const pedido = await pedidosService.rechazoCliente(id, motivo)
+      const i = this.data.findIndex((p) => p._id === id)
+      if (i >= 0) this.data[i] = pedido
+      return pedido
+    },
+
     async anular(id: string, motivo: string) {
       const pedido = await pedidosService.anular(id, motivo)
       const i = this.data.findIndex((p) => p._id === id)

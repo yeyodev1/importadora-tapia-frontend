@@ -6,6 +6,7 @@ import SkeletonTable from '@/components/ui/SkeletonTable.vue'
 import DespachoCard from './despachos/DespachoCard.vue'
 import MarcarSalidaModal from './despachos/MarcarSalidaModal.vue'
 import RetrasoModal from './despachos/RetrasoModal.vue'
+import RechazoClienteModal from './pedidos/RechazoClienteModal.vue'
 import FiltrosDespacho, { type Rango } from './despachos/FiltrosDespacho.vue'
 import { usePedidosStore } from '@/stores/pedidos'
 import { useUserStore } from '@/stores/user'
@@ -18,11 +19,12 @@ const userStore = useUserStore()
 /** Bodeguero limitado a una bodega (ej. Quito): el backend ya filtra sus pedidos. */
 const miBodega = computed(() => (userStore.isBodega ? userStore.bodega : null))
 
-type Grupo = 'por_despachar' | 'revision' | 'rechazados' | 'despachados'
+type Grupo = 'por_despachar' | 'revision' | 'rechazados' | 'despachados' | 'rechazo_cliente'
 const grupo = ref<Grupo>('por_despachar')
 const buscar = ref('')
 const seleccionado = ref<Pedido | null>(null)
 const retrasando = ref<Pedido | null>(null)
+const rechazando = ref<Pedido | null>(null)
 const rango = ref<Rango>('todos')
 const bodega = ref('')
 const recientes = ref(true)
@@ -67,6 +69,7 @@ const GRUPOS: { v: Grupo; label: string; ayuda: string; icono: string; tono: str
   { v: 'revision', label: 'Pendientes de revisión', ayuda: 'Sin aprobar o en espera', icono: 'fa-hourglass-half', tono: 'is-aviso' },
   { v: 'rechazados', label: 'No aprobados o anulados', ayuda: 'No se despachan', icono: 'fa-ban', tono: 'is-peligro' },
   { v: 'despachados', label: 'Despachados', ayuda: 'Ya salieron de bodega', icono: 'fa-circle-check', tono: 'is-ok' },
+  { v: 'rechazo_cliente', label: 'Rechazados por el cliente', ayuda: 'No los recibió: regresan', icono: 'fa-person-walking-arrow-loop-left', tono: 'is-peligro' },
 ]
 
 const VACIO: Record<Grupo, { titulo: string; mensaje: string }> = {
@@ -74,9 +77,11 @@ const VACIO: Record<Grupo, { titulo: string; mensaje: string }> = {
   revision: { titulo: 'Nada pendiente de revisión', mensaje: 'Todos los pedidos enviados ya fueron revisados.' },
   rechazados: { titulo: 'Sin pedidos no aprobados', mensaje: 'Los pedidos no aprobados o anulados aparecen aquí.' },
   despachados: { titulo: 'Aún no hay despachos', mensaje: 'Al marcar la salida de un pedido aparecerá aquí.' },
+  rechazo_cliente: { titulo: 'Ningún cliente ha rechazado pedidos', mensaje: 'Si un cliente no recibe su pedido, toca “El cliente no lo recibió” en la tarjeta.' },
 }
 
 function grupoDe(p: Pedido): Grupo {
+  if (p.estado === 'rechazado_cliente') return 'rechazo_cliente'
   if (p.despacho?.salidaAt) return 'despachados'
   if (p.estado === 'aprobado') return 'por_despachar'
   if (p.estado === 'rechazado' || p.estado === 'anulado') return 'rechazados'
@@ -84,7 +89,7 @@ function grupoDe(p: Pedido): Grupo {
 }
 
 const conteo = computed(() => {
-  const c: Record<Grupo, number> = { por_despachar: 0, revision: 0, rechazados: 0, despachados: 0 }
+  const c: Record<Grupo, number> = { por_despachar: 0, revision: 0, rechazados: 0, despachados: 0, rechazo_cliente: 0 }
   for (const p of base.value) c[grupoDe(p)]++
   return c
 })
@@ -173,12 +178,13 @@ onBeforeUnmount(() => {
     <EmptyState v-else-if="!lista.length" :title="VACIO[grupo].titulo" :message="VACIO[grupo].mensaje" />
     <ul v-else class="lista">
       <li v-for="p in lista" :key="p._id">
-        <DespachoCard :pedido="p" @despachar="seleccionado = p" @retrasar="retrasando = p" />
+        <DespachoCard :pedido="p" @despachar="seleccionado = p" @retrasar="retrasando = p" @rechazo-cliente="rechazando = p" />
       </li>
     </ul>
 
     <MarcarSalidaModal :pedido="seleccionado" @close="seleccionado = null" />
     <RetrasoModal :pedido="retrasando" @close="retrasando = null" />
+    <RechazoClienteModal :pedido="rechazando" @close="rechazando = null" />
   </div>
 </template>
 

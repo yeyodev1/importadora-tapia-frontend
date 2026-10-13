@@ -70,6 +70,23 @@ function eventoDe(p: Pedido, rol: string | null): AlertaPedido | null {
       tono: 'mal',
     }
   }
+  // El cliente no recibió el pedido: a administración y al asesor (si no lo
+  // registraron ellos) y a bodega si la mercadería ya había salido y regresa.
+  if (p.estado === 'rechazado_cliente' && p.rechazoCliente) {
+    const r = p.rechazoCliente
+    const leInteresa =
+      (rol === 'admin' && r.rol !== 'admin') ||
+      (rol === 'vendedor' && r.rol !== 'vendedor') ||
+      (rol === 'bodega' && r.yaHabiaSalido && r.rol !== 'bodega')
+    if (!leInteresa) return null
+    return {
+      clave: `${p._id}:rechazo_cliente`,
+      titulo: rol === 'bodega' ? 'Mercadería regresa: el cliente no la recibió' : 'El cliente no recibió el pedido',
+      detalle: `${det} · ${r.motivo}`,
+      destino: rol === 'bodega' ? '/bodega' : '/pedidos',
+      tono: 'mal',
+    }
+  }
   // Administración bajó cantidades: el asesor debe avisarle al cliente.
   const ajuste = p.ajustes?.length ? p.ajustes[p.ajustes.length - 1] : null
   if (rol === 'vendedor' && ajuste && !p.despacho?.salidaAt && Date.now() - new Date(ajuste.at).getTime() < 86400000) {

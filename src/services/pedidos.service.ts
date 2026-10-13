@@ -44,6 +44,12 @@ class PedidosService extends APIBase {
   }
 
   /** Anula un pedido que aún no sale (admin o su vendedor). Libera stock y cupo. */
+  /** El cliente no recibió el pedido aprobado: queda "Rechazado por el cliente". */
+  async rechazoCliente(id: string, motivo: string): Promise<Pedido> {
+    const res = await this.post<OneResponse>(`pedidos/${id}/rechazo-cliente`, { motivo })
+    return res.data.data
+  }
+
   async anular(id: string, motivo: string): Promise<Pedido> {
     const res = await this.post<OneResponse>(`pedidos/${id}/anular`, { motivo })
     return res.data.data

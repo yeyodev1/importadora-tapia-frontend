@@ -172,8 +172,9 @@ export interface NuevoCobro {
 /**
  * enviado = sin aprobación; en_espera = stand-by con mensaje de administración al asesor;
  * anulado = se cayó después de enviado o aprobado (libera stock y cupo, no se despacha).
+ * rechazado_cliente = estaba aprobado y el cliente no lo recibió (la mercadería regresa).
  */
-export type EstadoPedido = 'enviado' | 'aprobado' | 'rechazado' | 'en_espera' | 'anulado'
+export type EstadoPedido = 'enviado' | 'aprobado' | 'rechazado' | 'en_espera' | 'anulado' | 'rechazado_cliente'
 
 export interface EntregaPedido {
   at: string
@@ -239,6 +240,8 @@ export interface Pedido {
   historialEstado?: CambioEstadoPedido[]
   /** Quién anuló el pedido (admin o su vendedor), por qué y cuándo. */
   anulacion?: { motivo: string; por: string; rol: string; at: string }
+  /** El cliente no recibió el pedido; yaHabiaSalido = la mercadería ya había salido de bodega y regresa. */
+  rechazoCliente?: { motivo: string; por: string; rol: string; at: string; yaHabiaSalido: boolean }
   ajustes?: AjustePedido[]
   estado: EstadoPedido
   createdAt: string

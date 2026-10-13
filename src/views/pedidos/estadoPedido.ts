@@ -9,6 +9,7 @@ export const LABEL_ESTADO: Record<EstadoPedido, string> = {
   aprobado: 'Aprobado',
   rechazado: 'No aprobado',
   anulado: 'Anulado',
+  rechazado_cliente: 'Rechazado por el cliente',
 }
 
 export const TONO_ESTADO: Record<EstadoPedido, TonoEstado> = {
@@ -17,6 +18,7 @@ export const TONO_ESTADO: Record<EstadoPedido, TonoEstado> = {
   aprobado: 'success',
   rechazado: 'danger',
   anulado: 'danger',
+  rechazado_cliente: 'danger',
 }
 
 /** Estados en los que administración todavía puede decidir. */
@@ -24,7 +26,10 @@ export const esDecidible = (p: Pedido) => p.estado === 'enviado' || p.estado ===
 
 /** Pedido vivo que aún no sale de bodega: se puede anular o bajarle cantidades. */
 export const esModificable = (p: Pedido) =>
-  !p.despacho?.salidaAt && p.estado !== 'rechazado' && p.estado !== 'anulado'
+  !p.despacho?.salidaAt && p.estado !== 'rechazado' && p.estado !== 'anulado' && p.estado !== 'rechazado_cliente'
+
+/** Pedido aprobado (haya salido o no de bodega) que el cliente puede no recibir. */
+export const puedeRechazoCliente = (p: Pedido) => p.estado === 'aprobado'
 
 /** Hora corta para el historial: "06 oct, 10:42". */
 export const horaCorta = (iso: string) =>
