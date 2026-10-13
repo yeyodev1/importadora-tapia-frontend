@@ -89,12 +89,21 @@ const coincide = (p: Pedido, q: string) =>
   [p.clienteNombre, p.numero, p.clienteCodigo, p.vendedorNombre].some((t) => normalizar(t).includes(q))
 
 /** Pedidos que pasan el buscador (lo del servidor se cambia por la versión del store si ya está cargada). */
+/**
+ * Un vendedor que también despacha recibe además los pedidos de su bodega
+ * (para Despachos); aquí solo ve los suyos.
+ */
+const misPedidos = computed(() =>
+  userStore.isVendedor && userStore.isBodega ? pedidos.data.filter((p) => p.vendedorId === userStore.id) : pedidos.data,
+)
+
 const encontrados = computed(() => {
   const q = normalizar(buscar.value.trim())
-  if (!q) return pedidos.data
-  const locales = pedidos.data.filter((p) => coincide(p, q))
+  if (!q) return misPedidos.value
+  const locales = misPedidos.value.filter((p) => coincide(p, q))
   const ids = new Set(locales.map((p) => p._id))
-  const extra = (delServidor.value || []).filter((p) => !ids.has(p._id))
+  const soloMios = userStore.isVendedor && userStore.isBodega
+  const extra = (delServidor.value || []).filter((p) => !ids.has(p._id) && (!soloMios || p.vendedorId === userStore.id))
   return [...locales, ...extra]
 })
 
@@ -113,7 +122,7 @@ watch(bodega, (v) => {
     /* sin almacenamiento */
   }
 })
-const bodegas = computed(() => [...new Set(pedidos.data.flatMap((p) => p.items.map((i) => i.bodega || '')).filter(Boolean))].sort())
+const bodegas = computed(() => [...new Set(misPedidos.value.flatMap((p) => p.items.map((i) => i.bodega || '')).filter(Boolean))].sort())
 // Si la bodega guardada ya no aparece en los pedidos, se vuelve a "Todas".
 const bodegaActiva = computed(() => (bodegas.value.includes(bodega.value) ? bodega.value : ''))
 const enBodega = computed(() =>

@@ -30,6 +30,10 @@ const venCodigo = ref('')
 const name = ref('')
 /** Solo rol bodega: '' = todas las bodegas; si no, la bodega a la que se limita (ej. Quito). */
 const bodega = ref('')
+/** Vendedor que también despacha en bodega (p.ej. el jefe de bodega de Quito que vende). */
+const despacha = ref(false)
+/** Usa la bodega: rol bodega o vendedor que despacha. */
+const atiendeBodega = computed(() => role.value === 'bodega' || (role.value === 'vendedor' && despacha.value))
 const saving = ref(false)
 const error = ref('')
 /** Al crear varias seguidas: el modal no se cierra y va listando las creadas. */
@@ -46,6 +50,7 @@ function resetForm(keepRole = false) {
   venCodigo.value = props.user?.venCodigo || props.presetVenCodigo || ''
   name.value = props.user?.name || ''
   bodega.value = props.user?.bodega || ''
+  despacha.value = !!props.user?.rolesExtra?.includes('bodega')
 }
 
 watch(
@@ -112,7 +117,8 @@ async function save() {
         name: name.value || undefined,
         password: password.value || undefined,
         venCodigo: role.value === 'vendedor' ? venCodigo.value : undefined,
-        bodega: role.value === 'bodega' ? bodega.value : undefined,
+        rolesExtra: role.value === 'vendedor' ? (despacha.value ? ['bodega'] : []) : undefined,
+        bodega: atiendeBodega.value ? bodega.value : undefined,
       })
       emit('saved')
       emit('close')
@@ -124,7 +130,8 @@ async function save() {
       role: role.value,
       venCodigo: role.value === 'vendedor' ? venCodigo.value : undefined,
       name: name.value || undefined,
-      bodega: role.value === 'bodega' ? bodega.value : undefined,
+      rolesExtra: role.value === 'vendedor' && despacha.value ? ['bodega'] : undefined,
+      bodega: atiendeBodega.value ? bodega.value : undefined,
     })
     creadas.value.unshift({ email: user.email, name: user.name, emailSent })
     emit('saved')
@@ -154,7 +161,7 @@ const pasoDatos = computed(() => (isEdit.value ? 'Datos' : role.value === 'admin
             <div>
               <h2>{{ isEdit ? 'Editar cuenta' : 'Nueva cuenta de acceso' }}</h2>
               <p class="modal__hint">
-                <template v-if="isEdit">Cambia el correo, el nombre, la contraseña, el vendedor vinculado o la bodega.</template>
+                <template v-if="isEdit">Cambia el correo, el nombre, la contraseña, el vendedor vinculado, sus funciones o la bodega.</template>
                 <template v-else>La persona recibirá un correo con su usuario y contraseña.</template>
               </p>
             </div>
@@ -186,6 +193,22 @@ const pasoDatos = computed(() => (isEdit.value ? 'Datos' : role.value === 'admin
                 :error="erp.vendedores.error"
                 @retry="erp.fetchVendedores(true)"
               />
+            </fieldset>
+
+            <fieldset v-if="role === 'vendedor'">
+              <legend>Funciones adicionales</legend>
+              <label class="extra" :class="{ 'is-on': despacha }">
+                <input v-model="despacha" type="checkbox" />
+                <span class="extra__icon"><i class="fa-solid fa-truck-ramp-box" aria-hidden="true"></i></span>
+                <span class="extra__text">
+                  <strong>También despacha en bodega</strong>
+                  <small>Además de vender, ve los pedidos aprobados de su bodega y los marca como despachados (con foto), como el jefe de bodega.</small>
+                </span>
+              </label>
+              <div v-if="despacha" class="extra__bodega">
+                <span class="extra__label">¿De qué bodega despacha?</span>
+                <BodegaPicker v-model="bodega" />
+              </div>
             </fieldset>
 
             <fieldset v-if="role === 'bodega'">
@@ -246,4 +269,20 @@ const pasoDatos = computed(() => (isEdit.value ? 'Datos' : role.value === 'admin
 
 <style lang="scss" scoped>
 @use './form-modal';
+
+.extra {
+  display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; cursor: pointer;
+  border: 1.5px solid var(--border-strong); border-radius: 12px; background: var(--surface);
+  transition: border-color 0.2s ease, background 0.2s ease;
+  &:hover { border-color: $primary; }
+  &.is-on { border-color: $primary; background: var(--accent-soft); }
+  input { margin-top: 3px; width: 18px; height: 18px; accent-color: $primary; flex-shrink: 0; }
+  &__icon { flex-shrink: 0; width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center;
+    background: rgba($primary, 0.1); color: $primary; }
+  &__text { min-width: 0;
+    strong { display: block; font-size: 0.84rem; font-weight: 700; }
+    small { font-family: $font-secondary; font-size: 0.72rem; color: var(--text-soft); } }
+  &__bodega { margin-top: 12px; }
+  &__label { display: block; margin-bottom: 8px; font-family: $font-secondary; font-size: 0.76rem; font-weight: 700; color: var(--text-soft); }
+}
 </style>

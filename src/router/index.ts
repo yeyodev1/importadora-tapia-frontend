@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { rolesExtraGuardados } from '@/stores/user'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -167,8 +168,10 @@ router.beforeEach((to, _from, next) => {
     return next({ path: '/', replace: true })
   }
 
+  // Cuenta también las funciones extra (p.ej. vendedor que despacha en bodega).
+  const misRoles = [rol || '', ...rolesExtraGuardados()]
   const roles = to.matched.flatMap((record) => (record.meta?.roles as string[] | undefined) || [])
-  if (roles.length && !roles.includes(rol || '')) {
+  if (roles.length && !roles.some((r) => misRoles.includes(r))) {
     return next({ path: '/', replace: true })
   }
 

@@ -151,6 +151,22 @@ function avisar(nuevas: AlertaPedido[]) {
   parpadearTitulo(n.titulo)
 }
 
+/**
+ * Aviso del pedido según cada función del usuario. Un vendedor que también
+ * despacha recibe los avisos de asesor de SUS pedidos y los de bodega de los
+ * pedidos de su bodega.
+ */
+function eventoParaMi(p: Pedido, u: ReturnType<typeof useUserStore>): AlertaPedido | null {
+  if (!u.rolesExtra.length) return eventoDe(p, u.role)
+  for (const rol of u.roles) {
+    if (rol === 'vendedor' && p.vendedorId && p.vendedorId !== u.id) continue
+    if (rol === 'bodega' && u.bodega && !p.items?.some((i) => i.bodega === u.bodega)) continue
+    const ev = eventoDe(p, rol)
+    if (ev) return ev
+  }
+  return null
+}
+
 async function revisar() {
   const userStore = useUserStore()
   if (revisando || !userStore.role || !localStorage.getItem('access_token')) return
@@ -161,7 +177,7 @@ async function revisar() {
     desde = ahora
     const nuevas: AlertaPedido[] = []
     for (const p of data) {
-      const ev = eventoDe(p, userStore.role)
+      const ev = eventoParaMi(p, userStore)
       if (!ev || vistas.has(ev.clave)) continue
       vistas.add(ev.clave)
       // Al abrir la app solo avisa lo de los últimos 5 minutos, no todo el historial.

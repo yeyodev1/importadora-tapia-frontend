@@ -92,8 +92,8 @@ const sections = computed(() =>
       ...s,
       items: s.items.filter((i) => {
         // Bodega solo ve Despachos, Inventario y su perfil.
-        if (userStore.isBodega) return ['/bodega', '/inventario', '/me'].includes(i.to)
-        if (i.roles && !i.roles.includes(userStore.role || '')) return false
+        if (userStore.soloBodega) return ['/bodega', '/inventario', '/me'].includes(i.to)
+        if (i.roles && !i.roles.some((r) => userStore.roles.includes(r as never))) return false
         return !i.adminOnly || userStore.isAdmin
       }),
     }))

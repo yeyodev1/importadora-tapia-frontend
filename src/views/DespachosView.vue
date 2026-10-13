@@ -34,8 +34,18 @@ function limpiarFiltros() {
   buscar.value = ''
 }
 
+/**
+ * Pedidos de despacho. A un vendedor que también despacha el backend le manda
+ * además sus propios pedidos: aquí solo van los de su bodega.
+ */
+const base = computed(() =>
+  userStore.isVendedor && miBodega.value
+    ? pedidos.data.filter((p) => p.items.some((i) => i.bodega === miBodega.value))
+    : pedidos.data,
+)
+
 /** Bodegas que aparecen en los pedidos (Quito, Guayaquil…). */
-const bodegas = computed(() => miBodega.value ? [] : [...new Set(pedidos.data.flatMap((p) => p.items.map((i) => i.bodega || '')).filter(Boolean))].sort())
+const bodegas = computed(() => miBodega.value ? [] : [...new Set(base.value.flatMap((p) => p.items.map((i) => i.bodega || '')).filter(Boolean))].sort())
 
 /** Fecha que manda en la lista: la salida si ya salió; si no, cuando se creó. */
 const fechaDe = (p: Pedido) => p.despacho?.salidaAt || p.createdAt
@@ -75,13 +85,13 @@ function grupoDe(p: Pedido): Grupo {
 
 const conteo = computed(() => {
   const c: Record<Grupo, number> = { por_despachar: 0, revision: 0, rechazados: 0, despachados: 0 }
-  for (const p of pedidos.data) c[grupoDe(p)]++
+  for (const p of base.value) c[grupoDe(p)]++
   return c
 })
 
 const lista = computed(() => {
   const q = buscar.value.trim().toLowerCase()
-  return pedidos.data
+  return base.value
     .filter((p) => grupoDe(p) === grupo.value)
     .filter((p) => !q || p.clienteNombre.toLowerCase().includes(q) || p.numero.toLowerCase().includes(q))
     .filter((p) => !bodega.value || p.items.some((i) => i.bodega === bodega.value))

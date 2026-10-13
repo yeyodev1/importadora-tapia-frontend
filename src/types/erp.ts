@@ -128,8 +128,10 @@ export interface AppUser {
   email: string
   name: string
   role: UserRole
+  /** Funciones que el admin le suma al rol (hoy: vendedor que también despacha en bodega). */
+  rolesExtra?: UserRole[]
   venCodigo: string | null
-  /** Solo rol bodega: bod_nombre del ERP al que se limita (vacío = todas las bodegas). */
+  /** Quien despacha (rol bodega o vendedor con bodega): bod_nombre al que se limita (vacío = todas). */
   bodega?: string
   /** El admin pidió que ponga su propio correo; la app no deja seguir hasta cambiarlo. */
   debeCambiarCorreo?: boolean
@@ -210,6 +212,7 @@ export interface PedidoItem {
 export interface Pedido {
   _id: string
   numero: string
+  vendedorId?: string
   vendedorNombre: string
   clienteNombre: string
   clienteCodigo?: string
@@ -292,6 +295,7 @@ export interface LoginResponse {
     email: string
     name: string
     role: UserRole
+    rolesExtra?: UserRole[]
     venCodigo: string | null
     bodega?: string
     debeCambiarCorreo?: boolean

@@ -18,9 +18,12 @@ defineEmits<{ edit: []; remove: []; pedirCorreo: [] }>()
         <strong>{{ user.name }}</strong>
         <small>{{ user.email }}</small>
       </div>
-      <BaseBadge :tone="user.role === 'admin' ? 'info' : user.role === 'bodega' ? 'warning' : 'success'">
-        {{ user.role === 'admin' ? 'Admin' : user.role === 'bodega' ? 'Bodega' : 'Vendedor' }}
-      </BaseBadge>
+      <span class="card__roles">
+        <BaseBadge :tone="user.role === 'admin' ? 'info' : user.role === 'bodega' ? 'warning' : 'success'">
+          {{ user.role === 'admin' ? 'Admin' : user.role === 'bodega' ? 'Bodega' : 'Vendedor' }}
+        </BaseBadge>
+        <BaseBadge v-if="user.rolesExtra?.includes('bodega')" tone="warning">+ Bodega</BaseBadge>
+      </span>
     </div>
 
     <p v-if="user.debeCambiarCorreo" class="card__aviso">
@@ -30,7 +33,8 @@ defineEmits<{ edit: []; remove: []; pedirCorreo: [] }>()
     <p v-if="user.venCodigo" class="card__erp">
       Vinculado al vendedor <b>código {{ user.venCodigo }}</b> del ERP
     </p>
-    <p v-if="user.role === 'bodega'" class="card__erp">
+    <p v-if="user.role === 'bodega' || user.rolesExtra?.includes('bodega')" class="card__erp">
+      <template v-if="user.role !== 'bodega'">También despacha · </template>
       <template v-if="user.bodega">Solo la bodega <b>{{ user.bodega }}</b></template>
       <template v-else>Todas las bodegas</template>
     </p>
@@ -48,6 +52,7 @@ defineEmits<{ edit: []; remove: []; pedirCorreo: [] }>()
 </template>
 
 <style lang="scss" scoped>
+.card__roles { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; flex-shrink: 0; }
 .card {
   background: var(--surface);
   border: 1px solid var(--border);

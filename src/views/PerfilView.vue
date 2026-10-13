@@ -24,7 +24,7 @@ onMounted(async () => {
     erp.fetchClientes()
     erp.fetchCarteraFacturas()
   }
-  if (!userStore.isBodega) cobros.fetch()
+  if (!userStore.soloBodega) cobros.fetch()
   try {
     perfil.value = (await erpService.me()) as unknown as AppUser
   } catch {
@@ -33,7 +33,7 @@ onMounted(async () => {
 })
 
 const nombre = computed(() => perfil.value?.name || userStore.name || 'Usuario')
-const rol = computed(() => (userStore.isAdmin ? 'Administrador' : userStore.isBodega ? 'Bodega' : 'Vendedor'))
+const rol = computed(() => userStore.rolLabel)
 
 const misClientes = computed(() => (userStore.isVendedor ? erp.clientes.data.length : null))
 const miSaldo = computed(() =>
@@ -97,7 +97,7 @@ function logout() {
       </div>
     </section>
 
-    <RouterLink v-if="!userStore.isBodega" to="/cobros" class="link-cobros">Ver mis cobros →</RouterLink>
+    <RouterLink v-if="!userStore.soloBodega" to="/cobros" class="link-cobros">Ver mis cobros →</RouterLink>
   </div>
 </template>
 
