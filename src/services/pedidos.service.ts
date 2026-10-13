@@ -1,5 +1,5 @@
 import APIBase from './httpBase'
-import type { Pedido, NuevoPedido, EstadoPedido } from '@/types/erp'
+import type { Pedido, NuevoPedido, EstadoPedido, VentasAsesor } from '@/types/erp'
 import type { FirmaSubida } from '@/types/solicitudes'
 
 interface ListResponse {
@@ -14,6 +14,21 @@ interface OneResponse {
 class PedidosService extends APIBase {
   async list(): Promise<Pedido[]> {
     const res = await this.get<ListResponse>('pedidos')
+    return res.data.data
+  }
+
+  /** Busca en todo el historial por cliente, número de OP o asesor (sin tildes). */
+  async buscar(q: string): Promise<Pedido[]> {
+    const res = await this.get<ListResponse>(`pedidos?q=${encodeURIComponent(q)}`)
+    return res.data.data
+  }
+
+  /** Cuánto vendió cada asesor de cada producto entre dos fechas (AAAA-MM-DD, hora de Ecuador). */
+  async ventasAsesores(desde?: string, hasta?: string): Promise<VentasAsesor[]> {
+    const qs = new URLSearchParams()
+    if (desde) qs.set('desde', desde)
+    if (hasta) qs.set('hasta', hasta)
+    const res = await this.get<{ success: boolean; data: VentasAsesor[] }>(`pedidos/ventas-asesores${qs.size ? `?${qs}` : ''}`)
     return res.data.data
   }
 

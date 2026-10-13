@@ -87,7 +87,7 @@ class ErpService extends APIBase {
   /** Fija los cupos del producto; `reiniciar` vuelve a contar desde ahora (llegó mercadería). Lista vacía = sin cupo. */
   async guardarCupos(
     proCodigo: string,
-    payload: { proNombre?: string; reiniciar?: boolean; cupos: { venCodigo: string; nombre?: string; cantidad: number }[] },
+    payload: { proNombre?: string; reiniciar?: boolean; desde?: string; cupos: { venCodigo: string; nombre?: string; cantidad: number }[] },
   ): Promise<CupoProducto | null> {
     const res = await this.put<{ success: boolean; data: CupoProducto | null }>(`inventario/cupos/${encodeURIComponent(proCodigo)}`, payload)
     return res.data.data

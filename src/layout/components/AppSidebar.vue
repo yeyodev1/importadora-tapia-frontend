@@ -36,6 +36,7 @@ const icons: Record<string, string> = {
   usersGear: 'fa-users-gear',
   fileSign: 'fa-file-signature',
   truck: 'fa-truck-ramp-box',
+  ventas: 'fa-ranking-star',
 }
 
 const allSections: { title: string; items: NavItem[] }[] = [
@@ -62,6 +63,7 @@ const allSections: { title: string; items: NavItem[] }[] = [
     title: 'Operación comercial',
     items: [
       { to: '/pedidos', label: 'Pedidos', icon: 'cart' },
+      { to: '/ventas-asesores', label: 'Ventas por asesor', icon: 'ventas', roles: ['admin', 'vendedor'] },
       { to: '/visitas', label: 'Visitas', icon: 'pin' },
       { to: '/recorridos', label: 'Recorridos', icon: 'route' },
     ],

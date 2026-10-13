@@ -18,6 +18,9 @@ const emit = defineEmits<{ close: []; guardado: [proCodigo: string, cupo: CupoPr
 const users = useUsersStore()
 const cantidades = ref<Record<string, string>>({})
 const reiniciar = ref(false)
+/** Día desde el que cuenta lo pedido (p.ej. cuando llegó el contenedor). Vacío = como siempre. */
+const desdeDia = ref('')
+const hoy = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date())
 const guardando = ref(false)
 const error = ref('')
 
@@ -37,6 +40,7 @@ watch(
     for (const c of props.cupo?.cupos || []) m[c.venCodigo] = String(c.cantidad)
     cantidades.value = m
     reiniciar.value = false
+    desdeDia.value = ''
     error.value = ''
   },
 )
@@ -60,6 +64,7 @@ async function guardar(quitar = false) {
     const r = await erpService.guardarCupos(props.producto.pro_codigo, {
       proNombre: props.producto.pro_nombre,
       reiniciar: reiniciar.value,
+      ...(desdeDia.value ? { desde: desdeDia.value } : {}),
       cupos: quitar ? [] : lista.value,
     })
     emit('guardado', props.producto.pro_codigo, r)
@@ -113,9 +118,17 @@ async function guardar(quitar = false) {
             </li>
           </ul>
 
-          <label v-if="cupo" class="reiniciar">
+          <label v-if="cupo && !desdeDia" class="reiniciar">
             <input v-model="reiniciar" type="checkbox" />
             Llegó mercadería nueva: empezar a contar desde cero
+          </label>
+
+          <label class="desde">
+            <span>
+              Contar lo pedido desde el día
+              <small>Opcional. Pon el día que llegó la mercadería para que también cuente lo que el asesor pidió antes de fijar el cupo.</small>
+            </span>
+            <input v-model="desdeDia" type="date" :max="hoy()" aria-label="Contar lo pedido desde el día" />
           </label>
 
           <p class="total">Total repartido <b>{{ formatQty(totalCupos) }}</b></p>
@@ -141,6 +154,12 @@ async function guardar(quitar = false) {
 
 <style lang="scss" scoped>
 @use '../equipo/form-modal';
+.desde { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;
+  font-family: $font-secondary; font-size: 0.8rem; font-weight: 600; color: var(--text);
+  small { display: block; margin-top: 2px; font-size: 0.7rem; font-weight: 400; color: var(--text-faint); }
+  input { flex-shrink: 0; min-height: 38px; padding: 6px 10px; border: 1.5px solid var(--border-strong); border-radius: 8px;
+    background: var(--surface); color: var(--text); font-family: $font-secondary; font-size: 0.8rem;
+    &:focus { outline: none; border-color: $primary; } } }
 
 .ayuda { font-family: $font-secondary; font-size: 0.76rem; color: var(--text-soft); margin-bottom: 10px; }
 .asesores { list-style: none; display: flex; flex-direction: column; gap: 6px; max-height: 46vh; overflow-y: auto; margin-bottom: 10px; }

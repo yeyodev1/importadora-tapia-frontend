@@ -89,6 +89,9 @@ async function guardar() {
               </div>
               <small class="linea__meta">
                 {{ l.bodega }} · <b :class="{ over: l.cantidad > l.disponible }">{{ formatQty(l.disponible) }} {{ l.unidad }} disponible</b>
+                <template v-if="f.cupoDe(l.productoCodigo)">
+                  · <b :class="{ over: f.pasaCupo(l.productoCodigo) }">tu cupo: te quedan {{ formatQty(f.cupoDe(l.productoCodigo)!.queda) }}</b>
+                </template>
               </small>
               <div class="linea__inputs">
                 <label>Cant.
@@ -100,6 +103,9 @@ async function guardar() {
               </div>
               <small v-if="l.cantidad > l.disponible" class="linea__warn">
                 Supera lo disponible ({{ formatQty(l.disponible) }})
+              </small>
+              <small v-else-if="f.pasaCupo(l.productoCodigo)" class="linea__warn">
+                Te pasas de tu cupo: te quedan {{ formatQty(f.cupoDe(l.productoCodigo)!.queda) }} de {{ formatQty(f.cupoDe(l.productoCodigo)!.cantidad) }}
               </small>
             </div>
           </div>

@@ -63,6 +63,24 @@ export interface ReglaProducto {
   updatedAt?: string
 }
 
+/** Lo vendido por un asesor (pedidos sin aprobación, en espera y aprobados). */
+export interface VentasAsesor {
+  vendedorId: string
+  venCodigo: string | null
+  nombre: string
+  total: number
+  productos: {
+    productoCodigo: string
+    productoNombre: string
+    unidad?: string
+    cantidad: number
+    aprobada: number
+    pendiente: number
+    total: number
+    pedidos: number
+  }[]
+}
+
 /** Cupo por asesor de un producto escaso; `usado` cuenta lo pedido desde `desde`. */
 export interface CupoProducto {
   proCodigo: string

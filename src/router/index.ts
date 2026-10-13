@@ -73,6 +73,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: 'Pedidos' },
       },
       {
+        path: 'ventas-asesores',
+        name: 'VentasAsesores',
+        component: () => import('../views/VentasAsesoresView.vue'),
+        meta: { title: 'Ventas por asesor', roles: ['admin', 'vendedor'] },
+      },
+      {
         path: 'visitas',
         name: 'Visitas',
         component: () => import('../views/VisitasView.vue'),

@@ -1,8 +1,9 @@
 import { ref, computed } from 'vue'
 import { usePedidosStore } from '@/stores/pedidos'
+import { useUserStore } from '@/stores/user'
 import { erpService } from '@/services/erp.service'
 import { formatQty } from '@/utils/format'
-import type { InventarioDisponible } from '@/types/erp'
+import type { InventarioDisponible, CupoProducto } from '@/types/erp'
 import type { ApiError } from '@/types'
 
 export interface Linea {
@@ -20,6 +21,7 @@ export interface Linea {
 /** Estado y reglas del formulario de pedido (el modal sólo pinta). */
 export function usePedidoForm() {
   const pedidos = usePedidosStore()
+  const userStore = useUserStore()
 
   const cliente = ref('')
   const clienteCodigo = ref<string | undefined>(undefined)
@@ -35,6 +37,29 @@ export function usePedidoForm() {
   const error = ref('')
   const inventario = ref<InventarioDisponible[]>([])
   const cargandoInv = ref(false)
+  /** Cupo del asesor por producto (proCodigo → cupo y lo que le queda). El servidor igual lo valida. */
+  const cupos = ref<Record<string, { cantidad: number; queda: number }>>({})
+
+  async function cargarCupos() {
+    if (!userStore.isVendedor) return
+    try {
+      const lista: CupoProducto[] = await erpService.getCupos()
+      cupos.value = Object.fromEntries(
+        lista.filter((c) => c.cupos[0]).map((c) => [c.proCodigo, { cantidad: c.cupos[0]!.cantidad, queda: c.cupos[0]!.queda }]),
+      )
+    } catch {
+      cupos.value = {}
+    }
+  }
+
+  /** Cuánto lleva este pedido de un producto (puede venir de dos bodegas). */
+  const pidiendo = (codigo: string) =>
+    lineas.value.filter((l) => l.productoCodigo === codigo).reduce((s, l) => s + (Number(l.cantidad) || 0), 0)
+  const cupoDe = (codigo: string) => cupos.value[codigo] || null
+  const pasaCupo = (codigo: string) => {
+    const c = cupoDe(codigo)
+    return !!c && pidiendo(codigo) > c.queda
+  }
 
   async function cargarInventario() {
     cargandoInv.value = true
@@ -49,6 +74,8 @@ export function usePedidoForm() {
 
   function reset(nombre = '', codigo?: string) {
     cargarInventario()
+    cupos.value = {}
+    cargarCupos()
     error.value = ''
     cliente.value = nombre
     clienteCodigo.value = codigo
@@ -136,6 +163,12 @@ export function usePedidoForm() {
       error.value = `${sobreStock.productoNombre}: pediste ${sobreStock.cantidad} pero solo hay ${formatQty(sobreStock.disponible)} disponible.`
       return false
     }
+    const sobreCupo = lineas.value.find((l) => pasaCupo(l.productoCodigo))
+    if (sobreCupo) {
+      const c = cupoDe(sobreCupo.productoCodigo)!
+      error.value = `${sobreCupo.productoNombre}: tu cupo es ${formatQty(c.cantidad)} y te quedan ${formatQty(c.queda)}; en este pedido llevas ${formatQty(pidiendo(sobreCupo.productoCodigo))}.`
+      return false
+    }
     saving.value = true
     try {
       await pedidos.create({
@@ -156,6 +189,8 @@ export function usePedidoForm() {
       return true
     } catch (err) {
       error.value = (err as ApiError)?.message || 'No se pudo enviar el pedido'
+      // Si el servidor rechazó por cupo, el que se ve puede estar viejo: se refresca.
+      cargarCupos()
       return false
     } finally {
       saving.value = false
@@ -164,6 +199,6 @@ export function usePedidoForm() {
 
   return {
     cliente, observacion, plazoCreditoDias, lineas, buscar, fotos, subiendoFoto, saving, error, cargandoInv,
-    resultados, total, soloContado, conflictoContado, reset, agregar, quitar, guardar,
+    resultados, total, soloContado, conflictoContado, reset, agregar, quitar, guardar, cupoDe, pasaCupo,
   }
 }

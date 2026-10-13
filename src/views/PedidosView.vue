@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { usePedidosStore } from '@/stores/pedidos'
 import { useUserStore } from '@/stores/user'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -19,6 +19,7 @@ import AnularPedidoModal from './pedidos/AnularPedidoModal.vue'
 import AjustarPedidoModal from './pedidos/AjustarPedidoModal.vue'
 import { LABEL_ESTADO, TONO_ESTADO, esDecidible, esModificable } from './pedidos/estadoPedido'
 import { formatMoney, formatDate, formatQty, formatPlazo } from '@/utils/format'
+import { pedidosService } from '@/services/pedidos.service'
 import type { Pedido } from '@/types/erp'
 
 const pedidos = usePedidosStore()
@@ -53,16 +54,88 @@ watch(filtro, (v) => {
   }
 })
 
+// Buscador ("lupita"): filtra al instante lo cargado y, desde 2 letras, busca en
+// todo el historial del servidor para traer también las OP antiguas del cliente.
+const buscar = ref('')
+const delServidor = ref<Pedido[] | null>(null)
+const buscando = ref(false)
+const normalizar = (s?: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+let timerBusqueda: number | undefined
+let ultimaBusqueda = 0
+watch(buscar, (v) => {
+  window.clearTimeout(timerBusqueda)
+  const q = v.trim()
+  if (q.length < 2) {
+    delServidor.value = null
+    buscando.value = false
+    return
+  }
+  buscando.value = true
+  timerBusqueda = window.setTimeout(async () => {
+    const id = ++ultimaBusqueda
+    try {
+      const r = await pedidosService.buscar(q)
+      if (id === ultimaBusqueda) delServidor.value = r
+    } catch {
+      if (id === ultimaBusqueda) delServidor.value = null
+    } finally {
+      if (id === ultimaBusqueda) buscando.value = false
+    }
+  }, 350)
+})
+onBeforeUnmount(() => window.clearTimeout(timerBusqueda))
+
+const coincide = (p: Pedido, q: string) =>
+  [p.clienteNombre, p.numero, p.clienteCodigo, p.vendedorNombre].some((t) => normalizar(t).includes(q))
+
+/** Pedidos que pasan el buscador (lo del servidor se cambia por la versión del store si ya está cargada). */
+const encontrados = computed(() => {
+  const q = normalizar(buscar.value.trim())
+  if (!q) return pedidos.data
+  const locales = pedidos.data.filter((p) => coincide(p, q))
+  const ids = new Set(locales.map((p) => p._id))
+  const extra = (delServidor.value || []).filter((p) => !ids.has(p._id))
+  return [...locales, ...extra]
+})
+
+// Bodega (Quito / Guayaquil): los clientes de cada ciudad se atienden desde su bodega.
+const BODEGA_KEY = `pedidos_bodega_${userStore.role || 'x'}`
+const bodega = ref('')
+try {
+  bodega.value = localStorage.getItem(BODEGA_KEY) || ''
+} catch {
+  /* sin almacenamiento */
+}
+watch(bodega, (v) => {
+  try {
+    localStorage.setItem(BODEGA_KEY, v)
+  } catch {
+    /* sin almacenamiento */
+  }
+})
+const bodegas = computed(() => [...new Set(pedidos.data.flatMap((p) => p.items.map((i) => i.bodega || '')).filter(Boolean))].sort())
+// Si la bodega guardada ya no aparece en los pedidos, se vuelve a "Todas".
+const bodegaActiva = computed(() => (bodegas.value.includes(bodega.value) ? bodega.value : ''))
+const enBodega = computed(() =>
+  bodegaActiva.value ? encontrados.value.filter((p) => p.items.some((i) => i.bodega === bodegaActiva.value)) : encontrados.value,
+)
+
+const hayFiltros = computed(() => !!buscar.value.trim() || !!bodegaActiva.value)
+function limpiarFiltros() {
+  buscar.value = ''
+  bodega.value = ''
+}
+
 const conteo = computed(() => {
-  const c: Record<FiltroEstado, number> = { todos: pedidos.data.length, enviado: 0, en_espera: 0, aprobado: 0, rechazado: 0, anulado: 0 }
-  for (const p of pedidos.data) c[p.estado] = (c[p.estado] || 0) + 1
+  const c: Record<FiltroEstado, number> = { todos: enBodega.value.length, enviado: 0, en_espera: 0, aprobado: 0, rechazado: 0, anulado: 0 }
+  for (const p of enBodega.value) c[p.estado] = (c[p.estado] || 0) + 1
   return c
 })
 
 /** Lo que pide acción va arriba (sin aprobación, luego en espera); dentro, el más reciente primero. */
 const PRIORIDAD: Record<string, number> = { enviado: 0, en_espera: 1 }
 const lista = computed(() =>
-  pedidos.data
+  enBodega.value
     .filter((p) => filtro.value === 'todos' || p.estado === filtro.value)
     .sort((a, b) => (PRIORIDAD[a.estado] ?? 2) - (PRIORIDAD[b.estado] ?? 2) || b.createdAt.localeCompare(a.createdAt)),
 )
@@ -108,10 +181,51 @@ function decidir(p: Pedido, d: Decision) {
     />
 
     <template v-else>
+      <label class="buscar">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <input
+          id="pedidos-buscar"
+          v-model="buscar"
+          type="search"
+          :placeholder="userStore.isAdmin ? 'Buscar por cliente, asesor o número de OP…' : 'Buscar por cliente o número de OP…'"
+          aria-label="Buscar pedidos"
+        />
+        <i v-if="buscando" class="fa-solid fa-spinner fa-spin buscar__spin" aria-hidden="true"></i>
+      </label>
+
+      <div v-if="bodegas.length > 1 || hayFiltros" class="bodegas" role="group" aria-label="Filtrar por bodega">
+        <template v-if="bodegas.length > 1">
+          <i class="fa-solid fa-warehouse bodegas__ico" aria-hidden="true"></i>
+          <button type="button" class="chip" :class="{ 'is-on': !bodegaActiva }" :aria-pressed="!bodegaActiva" @click="bodega = ''">Todas las bodegas</button>
+          <button
+            v-for="b in bodegas"
+            :key="b"
+            type="button"
+            class="chip"
+            :class="{ 'is-on': bodegaActiva === b }"
+            :aria-pressed="bodegaActiva === b"
+            @click="bodega = b"
+          >{{ b }}</button>
+        </template>
+        <button v-if="hayFiltros" type="button" class="limpiar" @click="limpiarFiltros">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i> Quitar filtros
+        </button>
+      </div>
+
       <FiltroEstadoPedidos v-model="filtro" :conteo="conteo" />
 
       <EmptyState
-        v-if="!lista.length"
+        v-if="!lista.length && buscar.trim() && buscando"
+        title="Buscando…"
+        message="Revisando todo el historial de pedidos."
+      />
+      <EmptyState
+        v-else-if="!lista.length && hayFiltros && !conteo.todos"
+        title="Nada con esta búsqueda"
+        message="Revisa cómo está escrito el cliente o el número de OP, o toca “Quitar filtros”."
+      />
+      <EmptyState
+        v-else-if="!lista.length"
         title="Nada en este estado"
         message="Toca otro filtro de arriba para ver el resto de pedidos."
       />
@@ -196,6 +310,23 @@ function decidir(p: Pedido, d: Decision) {
   font-family: $font-principal; font-size: 0.8rem; font-weight: 700; cursor: pointer;
   transition: background 0.2s ease, transform 0.15s ease;
   &:hover { background: darken($primary, 6%); transform: translateY(-1px); } }
+.buscar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 0 14px; min-height: 44px;
+  border: 1.5px solid var(--border-strong); border-radius: 10px; background: var(--surface);
+  &:focus-within { border-color: $primary; }
+  i { color: var(--text-faint); font-size: 0.85rem; }
+  input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; color: var(--text);
+    font-family: $font-secondary; font-size: 0.85rem; padding: 10px 0; }
+  &__spin { color: $primary !important; } }
+.bodegas { display: flex; align-items: center; gap: 8px; overflow-x: auto; padding-bottom: 2px; margin-bottom: 10px;
+  &__ico { flex-shrink: 0; color: var(--text-faint); font-size: 0.85rem; } }
+.chip { flex-shrink: 0; min-height: 38px; padding: 7px 14px; border: 1.5px solid var(--border-strong); border-radius: 999px;
+  background: var(--surface); cursor: pointer; white-space: nowrap; font-family: $font-secondary; font-size: 0.78rem; font-weight: 600; color: var(--text);
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  &:hover { border-color: $primary; }
+  &.is-on { border-color: $primary; background: $primary; color: $white; } }
+.limpiar { flex-shrink: 0; background: none; border: none; padding: 6px 4px; cursor: pointer; white-space: nowrap;
+  font-family: $font-secondary; font-size: 0.76rem; font-weight: 700; color: $alert-error;
+  &:hover { text-decoration: underline; } }
 .lista { list-style: none; display: flex; flex-direction: column; gap: 12px; }
 .ped { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: var(--shadow-card); overflow: hidden;
