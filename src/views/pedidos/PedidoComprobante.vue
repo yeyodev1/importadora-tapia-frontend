@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { formatMoney, formatQty, formatDate, formatPlazo } from '@/utils/format'
+import { formatMoney, formatDate, formatPlazo } from '@/utils/format'
+import { cantidadTexto } from '@/utils/sacos'
 import type { Pedido } from '@/types/erp'
 
 const props = defineProps<{ open: boolean; pedido: Pedido | null }>()
@@ -27,7 +28,7 @@ async function compartir() {
   if (!props.pedido) return
   const p = props.pedido
   const lineas = p.items
-    .map((i) => `• ${i.productoNombre} — ${formatQty(i.cantidad)} ${i.unidad || ''} x ${formatMoney(i.precioUnitario)} = ${formatMoney(i.subtotal)}`)
+    .map((i) => `• ${i.productoNombre} — ${cantidadTexto(i)} x ${formatMoney(i.precioUnitario)} = ${formatMoney(i.subtotal)}`)
     .join('\n')
   const texto = `IMPORTADORA TAPIA — Comprobante de pedido ${p.numero}
 Cliente: ${p.clienteNombre}
@@ -96,7 +97,7 @@ Estado: ${estadoTexto[p.estado] || p.estado}${p.estado === 'en_espera' && p.moti
                     {{ it.productoNombre }}
                     <small v-if="it.bodega">{{ it.bodega }}</small>
                   </td>
-                  <td class="r">{{ formatQty(it.cantidad) }} {{ it.unidad }}</td>
+                  <td class="r">{{ cantidadTexto(it) }}</td>
                   <td class="r">{{ formatMoney(it.precioUnitario) }}</td>
                   <td class="r">{{ formatMoney(it.subtotal) }}</td>
                 </tr>

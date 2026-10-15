@@ -3,9 +3,11 @@ import { computed } from 'vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import RetrasoAviso from './RetrasoAviso.vue'
 import EntregasParciales from './EntregasParciales.vue'
+import FacturacionPedido from '../pedidos/FacturacionPedido.vue'
 import { avanceEntregas, esEntregaParcial } from './entregas'
 import { fechaCorta } from '@/composables/useAlertasPedidos'
 import { formatDate, formatQty, formatPlazo } from '@/utils/format'
+import { sacosDe } from '@/utils/sacos'
 import type { Pedido } from '@/types/erp'
 
 /** Tarjeta de un pedido para bodega: qué sale, en qué estado está y su salida. */
@@ -20,7 +22,8 @@ const fotosOp = computed(() => {
 })
 const avance = computed(() => avanceEntregas(props.pedido))
 const parcial = computed(() => esEntregaParcial(props.pedido))
-const faltanTotal = computed(() => avance.value.reduce((s, a) => s + a.falta, 0))
+/** Lo que falta en la unidad que cuenta bodega (sacos si sale en saco). */
+const faltanTotal = computed(() => avance.value.reduce((s, a) => s + (a.it.librasPorSaco ? sacosDe(a.it, a.falta) : a.falta), 0))
 const salida = computed(() => (props.pedido.despacho?.salidaAt ? new Date(props.pedido.despacho.salidaAt) : null))
 
 const estado = computed((): { tone: Tono; label: string } => {
@@ -52,11 +55,12 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
 
     <ul class="dc__items">
       <li v-for="(it, i) in pedido.items" :key="i">
+        <!-- Producto en saco: bodega cuenta sacos; las libras van de referencia. -->
         <span class="dc__qty">
-          {{ formatQty(it.cantidad) }}
-          <small v-if="pedido.entregas?.length" class="dc__avance">salió {{ formatQty(avance[i]!.salio) }}</small>
+          {{ formatQty(it.librasPorSaco ? sacosDe(it, it.cantidad) : it.cantidad) }}
+          <small v-if="pedido.entregas?.length" class="dc__avance">salió {{ formatQty(it.librasPorSaco ? sacosDe(it, avance[i]!.salio) : avance[i]!.salio) }}</small>
         </span>
-        <span class="dc__uni">{{ it.unidad }}</span>
+        <span class="dc__uni">{{ it.librasPorSaco ? 'Sacos' : it.unidad }}<small v-if="it.librasPorSaco" class="dc__lbs">{{ formatQty(it.cantidad) }} {{ it.unidad }}</small></span>
         <span class="dc__prod">{{ it.productoNombre }}<small v-if="it.bodega">{{ it.bodega }}</small></span>
       </li>
     </ul>
@@ -84,11 +88,13 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
       El cliente no lo recibió<template v-if="pedido.rechazoCliente">: {{ pedido.rechazoCliente.motivo }}</template>.
       <template v-if="pedido.rechazoCliente?.yaHabiaSalido">La mercadería regresa a bodega.</template>
       <template v-else>No se despacha.</template>
+      <template v-if="pedido.facturacion || pedido.rechazoCliente?.yaHabiaSalido"> Si ya estaba facturado, regístralo como devolución (nota de crédito) en el ERP: ahí el stock vuelve solo al inventario de la app.</template>
     </p>
     <p v-else-if="pedido.estado === 'anulado'" class="dc__aviso is-error">
       <i class="fa-solid fa-ban" aria-hidden="true"></i> Anulado<template v-if="pedido.anulacion">: {{ pedido.anulacion.motivo }}</template>. No se despacha.
     </p>
 
+    <FacturacionPedido :pedido="pedido" />
     <EntregasParciales :pedido="pedido" />
     <RetrasoAviso :pedido="pedido" />
 
@@ -161,6 +167,7 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
     small { display: block; font-size: 0.68rem; font-weight: 500; color: var(--text-faint); }
   }
 
+  &__lbs { display: block; font-size: 0.62rem; color: var(--text-faint); white-space: nowrap; }
   &__avance { display: block; font-size: 0.64rem; font-weight: 600; color: darken($alert-warning, 25%); white-space: nowrap; }
   &__nota { display: flex; gap: 6px; overflow-wrap: anywhere; font-family: $font-secondary; font-size: 0.78rem; color: var(--text-soft); font-style: italic; }
 

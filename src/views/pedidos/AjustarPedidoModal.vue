@@ -2,7 +2,9 @@
 import { ref, computed, watch } from 'vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { usePedidosStore } from '@/stores/pedidos'
-import { formatMoney, formatQty } from '@/utils/format'
+import { useUserStore } from '@/stores/user'
+import { formatMoney } from '@/utils/format'
+import { cantidadTexto, sacosDe } from '@/utils/sacos'
 import type { Pedido } from '@/types/erp'
 import type { ApiError } from '@/types'
 
@@ -10,11 +12,15 @@ import type { ApiError } from '@/types'
  * Administración cambia cantidades o quita líneas de un pedido que aún no sale
  * (p.ej. el cliente pidió 100 y solo le tocan 97, o ahora quiere más). Subir
  * se valida contra el stock disponible y el cupo del asesor. Se le avisa al asesor.
+ * El asesor también edita sus pedidos, pero solo baja cantidades (el cliente ya
+ * no quiere todo): lo que baja queda libre para otro cliente y se avisa a administración.
  */
 const props = defineProps<{ pedido: Pedido | null }>()
 const emit = defineEmits<{ close: [] }>()
 
 const store = usePedidosStore()
+const userStore = useUserStore()
+const soloBajar = computed(() => !userStore.isAdmin)
 
 const cantidades = ref<number[]>([])
 const nota = ref('')
@@ -25,7 +31,8 @@ watch(
   () => props.pedido,
   (p) => {
     if (!p) return
-    cantidades.value = p.items.map((i) => i.cantidad)
+    // Producto en saco: se edita en sacos (como lo vende el asesor) y se guarda en libras.
+    cantidades.value = p.items.map((i) => (i.librasPorSaco ? sacosDe(i, i.cantidad) : i.cantidad))
     nota.value = ''
     error.value = ''
   },
@@ -33,9 +40,11 @@ watch(
 
 const lineas = computed(() =>
   (props.pedido?.items || []).map((it, i) => {
-    const nueva = Number(cantidades.value[i])
-    const valida = Number.isFinite(nueva) && nueva >= 0
-    return { it, nueva, valida, cambia: valida && nueva !== it.cantidad }
+    const n = Number(cantidades.value[i])
+    const nueva = !it.librasPorSaco ? n : n === sacosDe(it, it.cantidad) ? it.cantidad : Math.round(n * it.librasPorSaco * 100) / 100
+    const sube = Number.isFinite(nueva) && nueva > it.cantidad
+    const valida = Number.isFinite(nueva) && nueva >= 0 && !(soloBajar.value && sube)
+    return { it, nueva, valida, sube, cambia: valida && nueva !== it.cantidad }
   }),
 )
 const nuevoTotal = computed(() =>
@@ -50,12 +59,15 @@ function quitar(i: number) {
   cantidades.value[i] = 0
 }
 
+/** Lo que se guarda: siempre en la unidad del ERP (libras). */
+const nuevasLibras = () => lineas.value.map((l) => l.nueva)
+
 async function guardar() {
   if (!props.pedido || !puedeGuardar.value) return
   guardando.value = true
   error.value = ''
   try {
-    await store.ajustar(props.pedido._id, cantidades.value.map(Number), nota.value.trim() || undefined)
+    await store.ajustar(props.pedido._id, nuevasLibras(), nota.value.trim() || undefined)
     emit('close')
   } catch (err) {
     error.value = (err as ApiError)?.message || 'No se pudo ajustar el pedido. Vuelve a intentar.'
@@ -78,19 +90,21 @@ async function guardar() {
             <button type="button" class="modal__x" aria-label="Cerrar" @click="emit('close')"><i class="fa-solid fa-xmark"></i></button>
           </header>
 
-          <p class="ayuda">Sube o baja la cantidad. Lo que bajes vuelve al stock y al cupo del asesor; lo que subas debe haber en stock y caber en su cupo.</p>
+          <p v-if="soloBajar" class="ayuda">Baja la cantidad si el cliente ya no quiere todo. Lo que bajes vuelve al stock y lo puedes vender a otro cliente. Para subirla, pídeselo a administración o haz otro pedido.</p>
+          <p v-else class="ayuda">Sube o baja la cantidad. Lo que bajes vuelve al stock y al cupo del asesor; lo que subas debe haber en stock y caber en su cupo.</p>
 
           <ul class="lineas">
             <li v-for="(l, i) in lineas" :key="i" class="linea" :class="{ 'is-cambia': l.cambia, 'is-error': !l.valida }">
               <div class="linea__info">
                 <strong>{{ l.it.productoNombre }}</strong>
-                <small>Pidió {{ formatQty(l.it.cantidad) }} {{ l.it.unidad }} × {{ formatMoney(l.it.precioUnitario) }}</small>
+                <small>Pidió {{ cantidadTexto(l.it) }} × {{ formatMoney(l.it.precioUnitario) }}<template v-if="l.it.librasPorSaco"> · edita en sacos</template></small>
               </div>
               <input
                 v-model.number="cantidades[i]"
                 type="number"
                 inputmode="decimal"
                 min="0"
+                :max="soloBajar ? (l.it.librasPorSaco ? sacosDe(l.it, l.it.cantidad) : l.it.cantidad) : undefined"
                 class="linea__qty"
                 :aria-label="`Nueva cantidad de ${l.it.productoNombre}`"
               />
@@ -99,11 +113,12 @@ async function guardar() {
               </button>
             </li>
           </ul>
-          <small v-if="invalida" class="falta">Revisa las cantidades: deben ser 0 o más.</small>
+          <small v-if="invalida && soloBajar && lineas.some((l) => l.sube)" class="falta">Solo puedes bajar la cantidad, no subirla.</small>
+          <small v-else-if="invalida" class="falta">Revisa las cantidades: deben ser 0 o más.</small>
           <small v-else-if="vacio" class="falta">El pedido quedaría vacío: mejor anúlalo.</small>
 
           <div class="field">
-            <textarea v-model="nota" rows="2" class="obs" maxlength="500" placeholder="Mensaje para el asesor (opcional), p. ej. «El cliente subió a 120»"></textarea>
+            <textarea v-model="nota" rows="2" class="obs" maxlength="500" :placeholder="soloBajar ? 'Motivo (opcional), p. ej. «El cliente solo quiere 50»' : 'Mensaje para el asesor (opcional), p. ej. «El cliente subió a 120»'"></textarea>
           </div>
 
           <p class="total">Nuevo total <b>{{ formatMoney(nuevoTotal) }}</b> <span>antes {{ formatMoney(pedido.total) }}</span></p>
@@ -115,7 +130,7 @@ async function guardar() {
               <button type="button" class="modal__cancel" @click="emit('close')">Cancelar</button>
               <button type="button" class="modal__save" :disabled="!puedeGuardar" @click="guardar">
                 <BaseSpinner v-if="guardando" :size="14" light />
-                Guardar y avisar al asesor
+                {{ soloBajar ? 'Guardar y avisar a administración' : 'Guardar y avisar al asesor' }}
               </button>
             </div>
           </div>

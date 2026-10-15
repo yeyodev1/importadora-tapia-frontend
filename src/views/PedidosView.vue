@@ -18,10 +18,15 @@ import PedidoDecisiones from './pedidos/PedidoDecisiones.vue'
 import AnularPedidoModal from './pedidos/AnularPedidoModal.vue'
 import AjustarPedidoModal from './pedidos/AjustarPedidoModal.vue'
 import RechazoClienteModal from './pedidos/RechazoClienteModal.vue'
-import { LABEL_ESTADO, TONO_ESTADO, esDecidible, esModificable, puedeRechazoCliente } from './pedidos/estadoPedido'
-import { formatMoney, formatDate, formatQty, formatPlazo } from '@/utils/format'
+import FacturacionPedido from './pedidos/FacturacionPedido.vue'
+import { LABEL_ESTADO, TONO_ESTADO, esDecidible, esModificable, puedeRechazoCliente, porFacturar } from './pedidos/estadoPedido'
+import { formatMoney, formatDate, formatPlazo } from '@/utils/format'
+import { cantidadTexto } from '@/utils/sacos'
 import { pedidosService } from '@/services/pedidos.service'
 import type { Pedido } from '@/types/erp'
+
+/** Miniatura de Cloudinary para las fotos del despacho (la original se abre al tocar). */
+const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fill,w_168,h_168/')
 
 const pedidos = usePedidosStore()
 const userStore = useUserStore()
@@ -41,7 +46,7 @@ const FILTRO_KEY = `pedidos_filtro_${userStore.role || 'x'}`
 function filtroGuardado(): FiltroEstado {
   try {
     const v = localStorage.getItem(FILTRO_KEY) as FiltroEstado | null
-    if (v && ['todos', 'enviado', 'en_espera', 'aprobado', 'rechazado', 'anulado', 'rechazado_cliente'].includes(v)) return v
+    if (v && ['todos', 'enviado', 'en_espera', 'aprobado', 'por_facturar', 'rechazado', 'anulado', 'rechazado_cliente'].includes(v)) return v
   } catch {
     /* sin almacenamiento */
   }
@@ -138,8 +143,11 @@ function limpiarFiltros() {
 }
 
 const conteo = computed(() => {
-  const c: Record<FiltroEstado, number> = { todos: enBodega.value.length, enviado: 0, en_espera: 0, aprobado: 0, rechazado: 0, anulado: 0, rechazado_cliente: 0 }
-  for (const p of enBodega.value) c[p.estado] = (c[p.estado] || 0) + 1
+  const c: Record<FiltroEstado, number> = { todos: enBodega.value.length, enviado: 0, en_espera: 0, aprobado: 0, por_facturar: 0, rechazado: 0, anulado: 0, rechazado_cliente: 0 }
+  for (const p of enBodega.value) {
+    c[p.estado] = (c[p.estado] || 0) + 1
+    if (porFacturar(p)) c.por_facturar++
+  }
   return c
 })
 
@@ -147,7 +155,7 @@ const conteo = computed(() => {
 const PRIORIDAD: Record<string, number> = { enviado: 0, en_espera: 1 }
 const lista = computed(() =>
   enBodega.value
-    .filter((p) => filtro.value === 'todos' || p.estado === filtro.value)
+    .filter((p) => filtro.value === 'todos' || (filtro.value === 'por_facturar' ? porFacturar(p) : p.estado === filtro.value))
     .sort((a, b) => (PRIORIDAD[a.estado] ?? 2) - (PRIORIDAD[b.estado] ?? 2) || b.createdAt.localeCompare(a.createdAt)),
 )
 
@@ -260,6 +268,7 @@ function decidir(p: Pedido, d: Decision) {
               <BaseBadge v-else-if="p.despacho?.salidaAt" tone="success">Despachado</BaseBadge>
               <BaseBadge v-else-if="p.estado === 'aprobado' && esEntregaParcial(p)" tone="warning">Entrega parcial</BaseBadge>
               <BaseBadge v-else-if="p.estado === 'aprobado' && p.retrasos?.length" tone="warning">Retrasado</BaseBadge>
+              <BaseBadge v-else-if="porFacturar(p)" tone="warning">Aprobado · por facturar</BaseBadge>
               <BaseBadge v-else :tone="TONO_ESTADO[p.estado] || 'info'">{{ LABEL_ESTADO[p.estado] || p.estado }}</BaseBadge>
               <i class="fa-solid fa-chevron-down ped__caret" :class="{ 'is-open': expandido === p._id }"></i>
             </div>
@@ -268,11 +277,12 @@ function decidir(p: Pedido, d: Decision) {
           <div v-if="expandido === p._id" class="ped__detail">
             <div v-for="(it, j) in p.items" :key="j" class="item">
               <span class="item__name">{{ it.productoNombre }}</span>
-              <span class="item__qty">{{ formatQty(it.cantidad) }} {{ it.unidad }} × {{ formatMoney(it.precioUnitario) }}</span>
+              <span class="item__qty">{{ cantidadTexto(it) }} × {{ formatMoney(it.precioUnitario) }}<template v-if="it.librasPorSaco"> c/u · {{ formatMoney(it.librasPorSaco * it.precioUnitario) }} el saco</template></span>
               <span class="item__sub">{{ formatMoney(it.subtotal) }}</span>
             </div>
             <p v-if="p.observacion" class="ped__obs">{{ p.observacion }}</p>
             <PedidoDecisiones :pedido="p" />
+            <FacturacionPedido :pedido="p" />
 
             <button type="button" class="ped__comp" @click="comprobante = p">
               <i class="fa-solid fa-file-invoice"></i> Ver comprobante
@@ -281,8 +291,16 @@ function decidir(p: Pedido, d: Decision) {
               <i class="fa-solid fa-truck-fast" aria-hidden="true"></i>
               Salió de bodega el {{ new Date(p.despacho.salidaAt).toLocaleString('es-EC', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) }}
               · {{ p.despacho.despachadoPor }}
-              <template v-if="p.despacho.fotos.length"> · {{ p.despacho.fotos.length }} foto{{ p.despacho.fotos.length === 1 ? '' : 's' }}</template>
             </p>
+            <!-- Fotos de la guía de remisión / despacho que sube bodega: el asesor ve qué salió. -->
+            <div v-if="p.despacho?.fotos.length" class="ped__despfotos">
+              <span>Fotos del despacho (guía de remisión) · toca para ampliar</span>
+              <div>
+                <a v-for="(u, k) in p.despacho.fotos" :key="u" :href="u" target="_blank" rel="noopener" :aria-label="`Ver foto ${k + 1} del despacho`">
+                  <img :src="miniatura(u)" :alt="`Foto ${k + 1} del despacho`" loading="lazy" />
+                </a>
+              </div>
+            </div>
             <EntregasParciales :pedido="p" class="ped__ent" />
             <RetrasoAviso :pedido="p" />
             <PedidoFotosEditor :pedido="p" />
@@ -298,9 +316,9 @@ function decidir(p: Pedido, d: Decision) {
                 <i class="fa-solid fa-person-walking-arrow-loop-left" aria-hidden="true"></i> El cliente no lo recibió
               </button>
             </div>
-            <!-- Pedido vivo que aún no sale: admin baja cantidades; admin o su asesor lo anulan. -->
-            <div v-if="esModificable(p)" class="ped__mod">
-              <button v-if="userStore.isAdmin" type="button" @click="ajustando = p">
+            <!-- Pedido vivo que aún no sale: admin sube o baja cantidades, su asesor las baja; ambos lo anulan. -->
+            <div v-if="esModificable(p) && (userStore.isAdmin || p.vendedorId === userStore.id)" class="ped__mod">
+              <button type="button" @click="ajustando = p">
                 <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Editar cantidades
               </button>
               <!-- Si ya salió una parte no se anula: se ajustan las cantidades a lo entregado. -->
@@ -368,6 +386,11 @@ function decidir(p: Pedido, d: Decision) {
   &__comp.is-foto { text-decoration: none; margin-left: 8px; }
   &__desp { display: block; overflow-wrap: anywhere; margin-top: 12px; i { margin-right: 6px; } padding: 9px 12px; border-radius: 9px;
     background: rgba($secondary, 0.1); font-family: $font-secondary; font-size: 0.78rem; color: darken($secondary, 18%); }
+  &__despfotos { margin-top: 8px; font-family: $font-secondary;
+    span { display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-soft); margin-bottom: 6px; }
+    div { display: flex; flex-wrap: wrap; gap: 8px; }
+    a { display: block; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    img { display: block; width: 84px; height: 84px; object-fit: cover; } }
   &__ent { margin-top: 12px; }
   &__obs { font-family: $font-secondary; font-size: 0.76rem; color: var(--text-soft); margin-top: 8px; font-style: italic; }
   &__espera { display: block; margin-top: 4px; font-family: $font-secondary; font-size: 0.72rem; font-style: normal; font-weight: 600;

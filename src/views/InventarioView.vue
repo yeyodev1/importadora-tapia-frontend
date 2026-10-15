@@ -9,7 +9,9 @@ import { erpService } from '@/services/erp.service'
 import { useUserStore } from '@/stores/user'
 import AvisoAsignacion from './inventario/AvisoAsignacion.vue'
 import CuposModal from './inventario/CuposModal.vue'
-import type { AsignacionInventario, CupoProducto } from '@/types/erp'
+import ReservasModal from './inventario/ReservasModal.vue'
+import SacoModal from './inventario/SacoModal.vue'
+import type { AsignacionInventario, CupoProducto, InventarioItem } from '@/types/erp'
 
 const erp = useErpStore()
 const userStore = useUserStore()
@@ -69,7 +71,7 @@ const columns: Column[] = [
   { key: 'pro_nombre', label: 'Producto', sortable: true },
   { key: 'uni_nombre', label: 'Unidad' },
   { key: 'bod_nombre', label: 'Bodega', sortable: true },
-  { key: 'stock_actual', label: 'Stock', align: 'right', sortable: true },
+  { key: 'disponible', label: 'Disponible', align: 'right', sortable: true },
   { key: 'solo_contado', label: 'Venta', align: 'center' },
   { key: 'cupo', label: 'Cupo', align: 'center' },
 ]
@@ -87,7 +89,24 @@ async function toggleSoloContado(row: { pro_codigo: string; pro_nombre: string; 
   }
 }
 
+/** Admin: libras por saco del producto (se vende por libra, sale en saco). */
+const sacoEditando = ref<InventarioItem | null>(null)
+function sacoGuardado(proCodigo: string, libras: number | null) {
+  for (const i of erp.inventario.data) if (i.pro_codigo === proCodigo) i.libras_por_saco = libras
+}
+
 const count = computed(() => (erp.inventario.fetchedAt ? rows.value.length : null))
+
+/** Admin: qué OP apartan el stock de una fila, para marcar las ya facturadas. */
+const reservasDe = ref<InventarioItem | null>(null)
+/** Tras marcar una OP, el servidor recalcula lo apartado (puede seguir apartada hasta que el ERP la descuente). */
+function quitarReserva() {
+  reservasDe.value = null
+  erp.fetchInventario(true)
+}
+
+/** Lo que se puede vender: stock del ERP menos lo apartado por pedidos que el ERP aún no descuenta. */
+const libre = (row: { stock_actual: string; disponible?: number }) => String(row.disponible ?? row.stock_actual)
 
 function stockTone(value: string): 'danger' | 'warning' | 'success' {
   const n = Number(value)
@@ -155,11 +174,17 @@ function stockLabel(value: string): string {
         <strong class="product">{{ value }}</strong>
       </template>
 
-      <template #cell-stock_actual="{ value }">
+      <template #cell-disponible="{ row }">
         <div class="stock">
-          <span class="stock__qty">{{ formatQty(value) }}</span>
-          <BaseBadge :tone="stockTone(value)">{{ stockLabel(value) }}</BaseBadge>
+          <span class="stock__qty">{{ formatQty(libre(row)) }}</span>
+          <BaseBadge :tone="stockTone(libre(row))">{{ stockLabel(libre(row)) }}</BaseBadge>
         </div>
+        <button v-if="row.reservado && row.reservadoPor" type="button" class="stock__res stock__res--btn" @click="reservasDe = row">
+          {{ formatQty(row.stock_actual) }} en ERP · {{ formatQty(row.reservado) }} apartado · ver OP
+        </button>
+        <small v-else-if="row.reservado" class="stock__res">
+          {{ formatQty(row.stock_actual) }} en ERP · {{ formatQty(row.reservado) }} apartado
+        </small>
       </template>
       <template #cell-solo_contado="{ row }">
         <button
@@ -177,6 +202,13 @@ function stockLabel(value: string): string {
         <BaseBadge v-else :tone="row.solo_contado ? 'warning' : 'neutral'">
           {{ row.solo_contado ? 'Solo contado' : 'Crédito o contado' }}
         </BaseBadge>
+        <button v-if="userStore.isAdmin" type="button" class="contado-btn saco-btn" :class="{ 'is-saco': row.libras_por_saco }" @click="sacoEditando = row">
+          <i class="fa-solid fa-sack-xmark" aria-hidden="true"></i>
+          {{ row.libras_por_saco ? `Saco de ${formatQty(row.libras_por_saco)} ${row.uni_nombre}` : 'Suelto · poner saco' }}
+        </button>
+        <span v-else-if="row.libras_por_saco" class="contado-btn saco-btn is-saco">
+          <i class="fa-solid fa-sack-xmark" aria-hidden="true"></i> Saco de {{ formatQty(row.libras_por_saco) }} {{ row.uni_nombre }}
+        </span>
       </template>
 
       <template #cell-cupo="{ row }">
@@ -197,12 +229,16 @@ function stockLabel(value: string): string {
         <div class="mcard">
           <div class="mcard__head">
             <strong>{{ row.pro_nombre }}</strong>
-            <BaseBadge :tone="stockTone(row.stock_actual)">{{ stockLabel(row.stock_actual) }}</BaseBadge>
+            <BaseBadge :tone="stockTone(libre(row))">{{ stockLabel(libre(row)) }}</BaseBadge>
           </div>
           <p class="mcard__meta">
             {{ row.bod_nombre }} · {{ row.uni_nombre }} ·
-            <b>{{ formatQty(row.stock_actual) }}</b> en stock
+            <b>{{ formatQty(libre(row)) }}</b> disponible
+            <template v-if="row.reservado"> · {{ formatQty(row.stock_actual) }} en ERP, {{ formatQty(row.reservado) }} apartado</template>
           </p>
+          <button v-if="row.reservado && row.reservadoPor" type="button" class="stock__res stock__res--btn" @click="reservasDe = row">
+            Ver qué OP lo apartan
+          </button>
           <button
             v-if="userStore.isAdmin"
             type="button"
@@ -215,6 +251,13 @@ function stockLabel(value: string): string {
             {{ row.solo_contado ? 'Solo contado' : 'Crédito o contado' }}
           </button>
           <span v-else-if="row.solo_contado" class="contado-btn is-on"><i class="fa-solid fa-money-bill-wave"></i> Solo contado</span>
+          <button v-if="userStore.isAdmin" type="button" class="contado-btn saco-btn" :class="{ 'is-saco': row.libras_por_saco }" @click="sacoEditando = row">
+            <i class="fa-solid fa-sack-xmark" aria-hidden="true"></i>
+            {{ row.libras_por_saco ? `Saco de ${formatQty(row.libras_por_saco)} ${row.uni_nombre}` : 'Suelto · poner saco' }}
+          </button>
+          <span v-else-if="row.libras_por_saco" class="contado-btn saco-btn is-saco">
+            <i class="fa-solid fa-sack-xmark" aria-hidden="true"></i> Saco de {{ formatQty(row.libras_por_saco) }} {{ row.uni_nombre }}
+          </span>
           <button
             v-if="userStore.isAdmin"
             type="button"
@@ -230,6 +273,8 @@ function stockLabel(value: string): string {
       </template>
     </DataTable>
 
+    <ReservasModal :producto="reservasDe" @close="reservasDe = null" @facturado="quitarReserva" />
+    <SacoModal :producto="sacoEditando" @close="sacoEditando = null" @guardado="sacoGuardado" />
     <CuposModal
       :producto="cupoEditando"
       :cupo="cupoEditando ? cupos[cupoEditando.pro_codigo] || null : null"
@@ -263,6 +308,8 @@ function stockLabel(value: string): string {
   &.is-cupo { border-color: rgba($primary, 0.5); background: var(--accent-soft); color: $primary; i { color: $primary; } }
 }
 .mcard .contado-btn { margin-top: 8px; margin-right: 6px; }
+.saco-btn { margin-top: 6px;
+  &.is-saco { border-color: rgba($primary, 0.35); background: rgba($primary, 0.08); color: $primary; } }
 
 .chips {
   display: flex;
@@ -309,6 +356,26 @@ function stockLabel(value: string): string {
   &__qty {
     font-weight: 700;
     min-width: 46px;
+  }
+
+  &__res {
+    display: block;
+    margin-top: 3px;
+    font-family: $font-secondary;
+    font-size: 0.68rem;
+    color: darken($alert-warning, 25%);
+    text-align: right;
+  }
+
+  &__res--btn {
+    margin-left: auto;
+    padding: 4px 0;
+    min-height: 32px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    text-decoration: underline;
   }
 }
 

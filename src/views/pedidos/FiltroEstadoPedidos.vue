@@ -2,7 +2,7 @@
 import type { EstadoPedido } from '@/types/erp'
 
 /** Chips de estado con su conteo: un toque y se filtra la lista (sin menús ni select). */
-export type FiltroEstado = 'todos' | EstadoPedido
+export type FiltroEstado = 'todos' | 'por_facturar' | EstadoPedido
 
 defineProps<{ conteo: Record<FiltroEstado, number> }>()
 const model = defineModel<FiltroEstado>({ required: true })
@@ -13,6 +13,7 @@ const CHIPS: { v: FiltroEstado; label: string; tono: string }[] = [
   { v: 'enviado', label: 'Sin aprobación', tono: 'is-info' },
   { v: 'en_espera', label: 'En espera', tono: 'is-aviso' },
   { v: 'aprobado', label: 'Aprobados', tono: 'is-ok' },
+  { v: 'por_facturar', label: 'Por facturar', tono: 'is-aviso' },
   { v: 'rechazado', label: 'No aprobados', tono: 'is-peligro' },
   { v: 'anulado', label: 'Anulados', tono: 'is-peligro' },
   { v: 'rechazado_cliente', label: 'Rechazados por el cliente', tono: 'is-peligro' },

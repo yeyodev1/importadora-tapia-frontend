@@ -43,13 +43,25 @@ class PedidosService extends APIBase {
     return res.data.data
   }
 
-  /** Anula un pedido que aún no sale (admin o su vendedor). Libera stock y cupo. */
+  /** Admin marca (o desmarca) que ya facturó el pedido en el ERP: deja de reservar stock. */
+  /** El ERP ya descontó un pedido facturado que la app seguía apartando. */
+  async setErpDescontado(id: string): Promise<Pedido> {
+    const res = await this.patch<OneResponse>(`pedidos/${id}/erp-descontado`, {})
+    return res.data.data
+  }
+
+  async setFacturado(id: string, facturado: boolean, numeroFactura?: string): Promise<Pedido> {
+    const res = await this.patch<OneResponse>(`pedidos/${id}/facturado`, { facturado, numeroFactura })
+    return res.data.data
+  }
+
   /** El cliente no recibió el pedido aprobado: queda "Rechazado por el cliente". */
   async rechazoCliente(id: string, motivo: string): Promise<Pedido> {
     const res = await this.post<OneResponse>(`pedidos/${id}/rechazo-cliente`, { motivo })
     return res.data.data
   }
 
+  /** Anula un pedido que aún no sale (admin o su vendedor). Libera stock y cupo. */
   async anular(id: string, motivo: string): Promise<Pedido> {
     const res = await this.post<OneResponse>(`pedidos/${id}/anular`, { motivo })
     return res.data.data

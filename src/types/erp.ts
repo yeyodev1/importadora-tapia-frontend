@@ -44,6 +44,16 @@ export interface CarteraConsolidada {
   deuda_total: string
 }
 
+export interface ReservaPedido {
+  id: string
+  numero: string
+  estado: EstadoPedido
+  clienteNombre: string
+  cantidad: number
+  /** Ya marcada facturada o salida, pero el ERP aún no baja ese stock. */
+  pendienteErp?: boolean
+}
+
 export interface InventarioItem {
   pro_codigo: string
   pro_nombre: string
@@ -51,14 +61,23 @@ export interface InventarioItem {
   bod_codigo: string
   bod_nombre: string
   stock_actual: string
+  /** Apartado por pedidos que el ERP aún no descuenta (sin facturar). */
+  reservado?: number
+  /** stock_actual - reservado: lo que de verdad se puede vender. */
+  disponible?: number
+  /** Solo administración: qué OP sin facturar apartan este stock. */
+  reservadoPor?: ReservaPedido[]
   /** Regla del admin: el producto sólo se vende al contado. */
   solo_contado?: boolean
+  /** Regla del admin: se vende por libra pero sale en saco de estas libras (null = suelto). */
+  libras_por_saco?: number | null
 }
 
 export interface ReglaProducto {
   proCodigo: string
   proNombre: string
   soloContado: boolean
+  librasPorSaco?: number | null
   actualizadoPor?: string
   updatedAt?: string
 }
@@ -208,6 +227,8 @@ export interface PedidoItem {
   cantidad: number
   precioUnitario: number
   subtotal: number
+  /** Sale en saco: libras de cada saco. `cantidad` y `precioUnitario` siguen en libras. */
+  librasPorSaco?: number
 }
 
 export interface Pedido {
@@ -243,6 +264,8 @@ export interface Pedido {
   /** El cliente no recibió el pedido; yaHabiaSalido = la mercadería ya había salido de bodega y regresa. */
   rechazoCliente?: { motivo: string; por: string; rol: string; at: string; yaHabiaSalido: boolean }
   ajustes?: AjustePedido[]
+  /** Administración ya lo facturó en el ERP: desde ahí deja de reservar stock. */
+  facturacion?: { at: string; por: string; numeroFactura?: string }
   estado: EstadoPedido
   createdAt: string
 }
@@ -251,7 +274,8 @@ export interface NuevoPedido {
   clienteNombre: string
   clienteCodigo?: string
   plazoCreditoDias: number
-  items: Omit<PedidoItem, 'subtotal'>[]
+  /** `sacos`: el asesor pidió en saco; el servidor calcula las libras con su regla. */
+  items: (Omit<PedidoItem, 'subtotal' | 'librasPorSaco'> & { sacos?: number })[]
   /** Fotos de la orden de pedido (OP) ya subidas a Cloudinary. */
   fotos?: string[]
   observacion?: string

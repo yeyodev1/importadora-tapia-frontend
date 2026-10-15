@@ -3,7 +3,7 @@ import { watch } from 'vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import FotoOrdenPedido from './FotoOrdenPedido.vue'
 import PlazoCreditoPicker from './PlazoCreditoPicker.vue'
-import { usePedidoForm } from './usePedidoForm'
+import { usePedidoForm, librasDe } from './usePedidoForm'
 import { formatMoney, formatQty } from '@/utils/format'
 
 const props = defineProps<{ open: boolean; clienteNombre?: string; clienteCodigo?: string }>()
@@ -40,10 +40,30 @@ async function guardar() {
             procesa en su sistema.
           </p>
 
-          <label class="fld">
-            <span>Cliente</span>
-            <input v-model="f.cliente.value" type="text" placeholder="Nombre del cliente" />
-          </label>
+          <div class="fld">
+            <span>Cliente <em class="req">· obligatorio, del listado de clientes</em></span>
+            <div v-if="f.clienteCodigo.value" class="cli-sel">
+              <i class="fa-solid fa-user-check" aria-hidden="true"></i>
+              <strong>{{ f.cliente.value }}</strong>
+              <button v-if="!clienteCodigo" type="button" @click="f.cambiarCliente()">Cambiar</button>
+            </div>
+            <template v-else>
+              <div class="search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input v-model="f.buscarCliente.value" type="search" placeholder="Buscar cliente por nombre o cédula/RUC…" autocomplete="off" />
+              </div>
+              <ul v-if="f.resultadosClientes.value.length" class="results">
+                <li v-for="c in f.resultadosClientes.value" :key="c.per_codigo" @click="f.elegirCliente(c)">
+                  <span>{{ c.per_nombre }}</span>
+                  <small>{{ c.per_identificacion }}<template v-if="c.per_direccion"> · {{ c.per_direccion }}</template></small>
+                </li>
+              </ul>
+              <p v-if="f.cargandoClientes.value" class="hint-inv">Cargando clientes…</p>
+              <p v-else-if="f.buscarCliente.value.trim().length >= 2 && !f.resultadosClientes.value.length" class="hint-inv is-req">
+                <i class="fa-solid fa-circle-info"></i> No está en tu listado de clientes. Si es nuevo, primero se crea en el sistema de Tapia (o envía su solicitud de crédito).
+              </p>
+            </template>
+          </div>
 
           <div class="fld">
             <span>Plazo de crédito <em class="req">· obligatorio</em></span>
@@ -67,10 +87,13 @@ async function guardar() {
                 :class="{ 'is-agotado': r.disponible <= 0 }"
                 @click="r.disponible > 0 && f.agregar(r)"
               >
-                <span>{{ r.pro_nombre }} <em v-if="r.solo_contado" class="tag-contado">Solo contado</em></span>
+                <span>
+                  {{ r.pro_nombre }} <em v-if="r.solo_contado" class="tag-contado">Solo contado</em>
+                  <em v-if="r.libras_por_saco" class="tag-saco">Saco de {{ formatQty(r.libras_por_saco) }} {{ r.uni_nombre }}</em>
+                </span>
                 <small>
                   {{ r.bod_nombre }} ·
-                  <b :class="r.disponible <= 0 ? 'x' : 'ok'">{{ formatQty(r.disponible) }} {{ r.uni_nombre }} disponible</b>
+                  <b :class="r.disponible <= 0 ? 'x' : 'ok'">{{ formatQty(r.disponible) }} {{ r.uni_nombre }} disponible<template v-if="r.libras_por_saco"> (≈ {{ formatQty(Math.floor(r.disponible / r.libras_por_saco)) }} sacos)</template></b>
                   <template v-if="r.reservado > 0"> · {{ formatQty(r.reservado) }} reservado</template>
                 </small>
               </li>
@@ -84,16 +107,28 @@ async function guardar() {
           <div v-if="f.lineas.value.length" class="lineas">
             <div v-for="(l, i) in f.lineas.value" :key="i" class="linea">
               <div class="linea__top">
-                <strong>{{ l.productoNombre }} <em v-if="l.soloContado" class="tag-contado">Solo contado</em></strong>
+                <strong>
+                  {{ l.productoNombre }} <em v-if="l.soloContado" class="tag-contado">Solo contado</em>
+                  <em v-if="l.librasPorSaco" class="tag-saco">Saco de {{ formatQty(l.librasPorSaco) }} {{ l.unidad }}</em>
+                </strong>
                 <button type="button" @click="f.quitar(i)"><i class="fa-solid fa-trash-can"></i></button>
               </div>
               <small class="linea__meta">
-                {{ l.bodega }} · <b :class="{ over: l.cantidad > l.disponible }">{{ formatQty(l.disponible) }} {{ l.unidad }} disponible</b>
+                {{ l.bodega }} · <b :class="{ over: librasDe(l) > l.disponible }">{{ formatQty(l.disponible) }} {{ l.unidad }} disponible</b>
                 <template v-if="f.cupoDe(l.productoCodigo)">
                   · <b :class="{ over: f.pasaCupo(l.productoCodigo) }">tu cupo: te quedan {{ formatQty(f.cupoDe(l.productoCodigo)!.queda) }}</b>
                 </template>
               </small>
-              <div class="linea__inputs">
+              <!-- Se vende por libra pero sale en saco: el asesor pide sacos y pone el precio por libra. -->
+              <div v-if="l.librasPorSaco" class="linea__inputs">
+                <label>Sacos
+                  <input v-model.number="l.sacos" type="number" min="0" step="1" inputmode="numeric"
+                    :class="{ 'is-over': librasDe(l) > l.disponible }" />
+                </label>
+                <label>Precio por {{ (l.unidad || 'libra').toLowerCase().replace(/s$/, '') }}<input v-model.number="l.precioUnitario" type="number" min="0" step="0.01" placeholder="0.00" /></label>
+                <span class="linea__sub">{{ formatMoney(librasDe(l) * l.precioUnitario) }}</span>
+              </div>
+              <div v-else class="linea__inputs">
                 <label>Cant.
                   <input v-model.number="l.cantidad" type="number" min="0" :max="l.disponible"
                     :class="{ 'is-over': l.cantidad > l.disponible }" />
@@ -101,7 +136,11 @@ async function guardar() {
                 <label>Precio<input v-model.number="l.precioUnitario" type="number" min="0" step="0.01" placeholder="0.00" /></label>
                 <span class="linea__sub">{{ formatMoney(l.cantidad * l.precioUnitario) }}</span>
               </div>
-              <small v-if="l.cantidad > l.disponible" class="linea__warn">
+              <small v-if="l.librasPorSaco && librasDe(l) > 0" class="linea__saco">
+                {{ formatQty(l.sacos) }} {{ l.sacos === 1 ? 'saco' : 'sacos' }} × {{ formatQty(l.librasPorSaco) }} = <b>{{ formatQty(librasDe(l)) }} {{ l.unidad }}</b>
+                <template v-if="l.precioUnitario > 0"> · {{ formatMoney(l.librasPorSaco * l.precioUnitario) }} por saco</template>
+              </small>
+              <small v-if="librasDe(l) > l.disponible" class="linea__warn">
                 Supera lo disponible ({{ formatQty(l.disponible) }})
               </small>
               <small v-else-if="f.pasaCupo(l.productoCodigo)" class="linea__warn">
@@ -155,6 +194,17 @@ async function guardar() {
   &__note { margin: 8px 0 16px; font-family: $font-secondary; font-size: 0.76rem; color: var(--text-soft);
     background: rgba($primary, 0.06); border: 1px solid rgba($primary, 0.14); border-radius: 9px; padding: 10px 12px; }
 }
+.cli-sel {
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid rgba($secondary, 0.45); border-radius: 9px;
+  background: rgba($secondary, 0.08); font-family: $font-secondary; color: darken($secondary, 15%);
+  strong { flex: 1; min-width: 0; font-size: 0.86rem; color: var(--text); overflow-wrap: anywhere; }
+  button { border: none; background: none; color: $primary; font-weight: 700; font-size: 0.76rem; cursor: pointer; padding: 4px; }
+}
+.tag-saco {
+  display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+  background: rgba($primary, 0.1); color: $primary;
+  font-family: $font-secondary; font-size: 0.64rem; font-weight: 700; font-style: normal;
+}
 .tag-contado {
   display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
   background: rgba($secondary, 0.14); color: darken($secondary, 12%);
@@ -205,6 +255,8 @@ async function guardar() {
       input { padding: 7px 9px; border: 1px solid var(--border-strong); border-radius: 7px; font-size: 0.85rem;
         &.is-over { border-color: $alert-error; background: $alert-error-bg; } } }
     .linea__sub { font-family: $font-secondary; font-weight: 800; font-size: 0.9rem; min-width: 74px; text-align: right; padding-bottom: 7px; } }
+  &__saco { display: block; margin-top: 6px; font-family: $font-secondary; font-size: 0.7rem; color: var(--text-soft);
+    b { color: var(--text); } }
   &__warn { display: block; margin-top: 6px; font-family: $font-secondary; font-size: 0.68rem; font-weight: 600; color: $alert-error; }
 }
 .err { font-family: $font-secondary; font-size: 0.78rem; color: darken($alert-error, 8%);

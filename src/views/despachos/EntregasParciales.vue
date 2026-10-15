@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { avanceEntregas } from './entregas'
-import { formatQty } from '@/utils/format'
+import { cantidadTexto } from '@/utils/sacos'
 import type { Pedido } from '@/types/erp'
 
 /** Historial de salidas cuando el cliente recibe por partes: cuándo, qué salió y cuánto falta. */
@@ -9,6 +9,10 @@ const props = defineProps<{ pedido: Pedido }>()
 
 const avance = computed(() => avanceEntregas(props.pedido))
 const nombre = (codigo: string) => props.pedido.items.find((i) => i.productoCodigo === codigo)?.productoNombre || codigo
+const cant = (c: { productoCodigo: string; bodega?: string; cantidad: number }) => {
+  const it = props.pedido.items.find((i) => i.productoCodigo === c.productoCodigo && (i.bodega || '') === (c.bodega || ''))
+  return it ? cantidadTexto(it, c.cantidad) : String(c.cantidad)
+}
 const hora = (iso: string) =>
   new Date(iso).toLocaleString('es-EC', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 const faltan = computed(() => avance.value.filter((a) => a.falta > 0))
@@ -22,13 +26,13 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
       <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
       Entregas por partes ({{ pedido.entregas!.length }})
       <span v-if="faltan.length" class="ent__falta">
-        · faltan <template v-for="(a, j) in faltan" :key="j">{{ j ? ', ' : ' ' }}{{ formatQty(a.falta) }} {{ a.it.productoNombre }}</template>
+        · faltan <template v-for="(a, j) in faltan" :key="j">{{ j ? ', ' : ' ' }}{{ cantidadTexto(a.it, a.falta) }} {{ a.it.productoNombre }}</template>
       </span>
     </summary>
     <ol>
       <li v-for="(e, i) in pedido.entregas" :key="i">
         <b>{{ i + 1 }}.ª salida · {{ hora(e.at) }}</b>
-        <span><template v-for="(c, j) in e.cantidades" :key="j">{{ j ? ', ' : '' }}{{ formatQty(c.cantidad) }} {{ nombre(c.productoCodigo) }}</template></span>
+        <span><template v-for="(c, j) in e.cantidades" :key="j">{{ j ? ', ' : '' }}{{ cant(c) }} {{ nombre(c.productoCodigo) }}</template></span>
         <small>{{ e.por }}<template v-if="e.observacion"> · {{ e.observacion }}</template></small>
         <span v-if="e.fotos.length" class="ent__fotos">
           <a v-for="(u, k) in e.fotos" :key="u" :href="u" target="_blank" rel="noopener">

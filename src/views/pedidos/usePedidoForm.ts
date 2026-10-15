@@ -1,9 +1,10 @@
 import { ref, computed } from 'vue'
 import { usePedidosStore } from '@/stores/pedidos'
 import { useUserStore } from '@/stores/user'
+import { useErpStore } from '@/stores/erp'
 import { erpService } from '@/services/erp.service'
 import { formatQty } from '@/utils/format'
-import type { InventarioDisponible, CupoProducto } from '@/types/erp'
+import type { InventarioDisponible, CupoProducto, Cliente } from '@/types/erp'
 import type { ApiError } from '@/types'
 
 export interface Linea {
@@ -16,14 +17,24 @@ export interface Linea {
   precioUnitario: number
   /** Regla del admin: este producto sólo se vende al contado. */
   soloContado: boolean
+  /** Sale en saco de estas libras: el asesor pide sacos y el precio va por libra. */
+  librasPorSaco: number | null
+  sacos: number
 }
+
+/** Libras (unidad del ERP) que lleva la línea: en saco son sacos × libras por saco. */
+export const librasDe = (l: Linea) =>
+  l.librasPorSaco ? Math.round((Number(l.sacos) || 0) * l.librasPorSaco * 100) / 100 : Number(l.cantidad) || 0
 
 /** Estado y reglas del formulario de pedido (el modal sólo pinta). */
 export function usePedidoForm() {
   const pedidos = usePedidosStore()
   const userStore = useUserStore()
+  const erp = useErpStore()
 
   const cliente = ref('')
+  /** El cliente se elige del listado de clientes del ERP (no se escribe a mano). */
+  const buscarCliente = ref('')
   const clienteCodigo = ref<string | undefined>(undefined)
   const observacion = ref('')
   /** Obligatorio: null hasta que el vendedor elija (0 = contado). */
@@ -54,7 +65,7 @@ export function usePedidoForm() {
 
   /** Cuánto lleva este pedido de un producto (puede venir de dos bodegas). */
   const pidiendo = (codigo: string) =>
-    lineas.value.filter((l) => l.productoCodigo === codigo).reduce((s, l) => s + (Number(l.cantidad) || 0), 0)
+    lineas.value.filter((l) => l.productoCodigo === codigo).reduce((s, l) => s + librasDe(l), 0)
   const cupoDe = (codigo: string) => cupos.value[codigo] || null
   const pasaCupo = (codigo: string) => {
     const c = cupoDe(codigo)
@@ -77,13 +88,36 @@ export function usePedidoForm() {
     cupos.value = {}
     cargarCupos()
     error.value = ''
-    cliente.value = nombre
+    erp.fetchClientes()
+    cliente.value = codigo ? nombre : ''
     clienteCodigo.value = codigo
+    buscarCliente.value = ''
     observacion.value = ''
     plazoCreditoDias.value = null
     lineas.value = []
     buscar.value = ''
     fotos.value = []
+  }
+
+  const normalizar = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const cargandoClientes = computed(() => erp.clientes.loading && !erp.clientes.data.length)
+  const resultadosClientes = computed(() => {
+    const q = normalizar(buscarCliente.value.trim())
+    if (q.length < 2) return []
+    return erp.clientes.data
+      .filter((c) => normalizar(c.per_nombre || '').includes(q) || (c.per_identificacion || '').includes(q))
+      .slice(0, 8)
+  })
+
+  function elegirCliente(c: Cliente) {
+    cliente.value = (c.per_nombre || '').trim()
+    clienteCodigo.value = String(c.per_codigo)
+    buscarCliente.value = ''
+  }
+
+  function cambiarCliente() {
+    cliente.value = ''
+    clienteCodigo.value = undefined
   }
 
   const resultados = computed(() => {
@@ -95,7 +129,9 @@ export function usePedidoForm() {
   function agregar(item: InventarioDisponible) {
     const ya = lineas.value.find((l) => l.productoCodigo === item.pro_codigo && l.bodega === item.bod_nombre)
     if (ya) {
-      if (ya.cantidad < ya.disponible) ya.cantidad += 1
+      if (ya.librasPorSaco) {
+        if (librasDe(ya) + ya.librasPorSaco <= ya.disponible) ya.sacos += 1
+      } else if (ya.cantidad < ya.disponible) ya.cantidad += 1
     } else {
       lineas.value.push({
         productoCodigo: item.pro_codigo,
@@ -106,6 +142,8 @@ export function usePedidoForm() {
         cantidad: 1,
         precioUnitario: 0,
         soloContado: Boolean(item.solo_contado),
+        librasPorSaco: Number(item.libras_por_saco) > 0 ? Number(item.libras_por_saco) : null,
+        sacos: 1,
       })
     }
     buscar.value = ''
@@ -115,7 +153,7 @@ export function usePedidoForm() {
     lineas.value.splice(i, 1)
   }
 
-  const total = computed(() => lineas.value.reduce((s, l) => s + l.cantidad * l.precioUnitario, 0))
+  const total = computed(() => lineas.value.reduce((s, l) => s + librasDe(l) * l.precioUnitario, 0))
 
   /** Productos del pedido que sólo se venden al contado (obligan plazo = Contado). */
   const soloContado = computed(() => lineas.value.filter((l) => l.soloContado))
@@ -131,8 +169,8 @@ export function usePedidoForm() {
       error.value = 'Espera a que termine de subir la foto de la orden de pedido.'
       return false
     }
-    if (!cliente.value) {
-      error.value = 'Indica el cliente.'
+    if (!cliente.value || !clienteCodigo.value) {
+      error.value = 'Elige el cliente del listado de clientes.'
       return false
     }
     if (plazoCreditoDias.value === null) {
@@ -144,9 +182,9 @@ export function usePedidoForm() {
       return false
     }
     // Cada producto con cantidad y precio: así se reserva el stock y el total es real.
-    const sinCantidad = lineas.value.find((l) => !(Number(l.cantidad) > 0))
+    const sinCantidad = lineas.value.find((l) => !(librasDe(l) > 0))
     if (sinCantidad) {
-      error.value = `${sinCantidad.productoNombre}: indica la cantidad.`
+      error.value = `${sinCantidad.productoNombre}: indica ${sinCantidad.librasPorSaco ? 'cuántos sacos' : 'la cantidad'}.`
       return false
     }
     const sinPrecio = lineas.value.find((l) => !(Number(l.precioUnitario) > 0))
@@ -158,9 +196,9 @@ export function usePedidoForm() {
       error.value = `Solo se vende al contado: ${soloContado.value.map((l) => l.productoNombre).join(', ')}. Cambia el plazo a "Contado" o quita ese producto.`
       return false
     }
-    const sobreStock = lineas.value.find((l) => l.cantidad > l.disponible)
+    const sobreStock = lineas.value.find((l) => librasDe(l) > l.disponible)
     if (sobreStock) {
-      error.value = `${sobreStock.productoNombre}: pediste ${sobreStock.cantidad} pero solo hay ${formatQty(sobreStock.disponible)} disponible.`
+      error.value = `${sobreStock.productoNombre}: pediste ${formatQty(librasDe(sobreStock))} ${sobreStock.unidad || ''} pero solo hay ${formatQty(sobreStock.disponible)} disponible.`
       return false
     }
     const sobreCupo = lineas.value.find((l) => pasaCupo(l.productoCodigo))
@@ -180,7 +218,8 @@ export function usePedidoForm() {
           productoNombre: l.productoNombre,
           unidad: l.unidad,
           bodega: l.bodega,
-          cantidad: l.cantidad,
+          cantidad: librasDe(l),
+          ...(l.librasPorSaco ? { sacos: Number(l.sacos) } : {}),
           precioUnitario: l.precioUnitario,
         })),
         fotos: fotos.value.length ? [...fotos.value] : undefined,
@@ -198,7 +237,7 @@ export function usePedidoForm() {
   }
 
   return {
-    cliente, observacion, plazoCreditoDias, lineas, buscar, fotos, subiendoFoto, saving, error, cargandoInv,
+    cliente, clienteCodigo, buscarCliente, resultadosClientes, cargandoClientes, elegirCliente, cambiarCliente, observacion, plazoCreditoDias, lineas, buscar, fotos, subiendoFoto, saving, error, cargandoInv,
     resultados, total, soloContado, conflictoContado, reset, agregar, quitar, guardar, cupoDe, pasaCupo,
   }
 }

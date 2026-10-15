@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import FotoOrdenPedido from '../pedidos/FotoOrdenPedido.vue'
 import { usePedidosStore } from '@/stores/pedidos'
-import { formatQty } from '@/utils/format'
+import { cantidadTexto, sacosDe } from '@/utils/sacos'
 import { avanceEntregas } from './entregas'
 import type { Pedido } from '@/types/erp'
 import type { ApiError } from '@/types'
@@ -22,19 +22,29 @@ const observacion = ref('')
 const subiendo = ref(false)
 const guardando = ref(false)
 const error = ref('')
-/** Cuánto sale en esta salida, por línea (por defecto todo lo que falta). */
+/** Cuánto sale en esta salida, por línea (por defecto todo lo que falta). En sacos si el producto sale en saco. */
 const salen = ref<number[]>([])
 
 const avance = computed(() => (props.pedido ? avanceEntregas(props.pedido) : []))
+/** Lo que falta de cada línea en la unidad que cuenta bodega. */
+const faltaVista = (a: { it: { librasPorSaco?: number }; falta: number }) => (a.it.librasPorSaco ? sacosDe(a.it, a.falta) : a.falta)
+/** Lo que sale de cada línea en libras (unidad del ERP); si sale todo lo que falta, exacto. */
+const salenLibras = computed(() =>
+  avance.value.map((a, i) => {
+    const n = Number(salen.value[i])
+    if (!a.it.librasPorSaco) return n
+    return n === faltaVista(a) ? a.falta : Math.round(n * a.it.librasPorSaco * 100) / 100
+  }),
+)
 const yaHuboEntregas = computed(() => !!props.pedido?.entregas?.length)
 const lineasValidas = computed(() =>
   avance.value.every((a, i) => {
-    const n = Number(salen.value[i])
+    const n = salenLibras.value[i]!
     return Number.isFinite(n) && n >= 0 && n <= a.falta
   }),
 )
 const algoSale = computed(() => salen.value.some((n) => Number(n) > 0))
-const completa = computed(() => avance.value.every((a, i) => Number(salen.value[i]) === a.falta))
+const completa = computed(() => avance.value.every((a, i) => salenLibras.value[i] === a.falta))
 
 const yaSalio = computed(() => !!props.pedido?.despacho?.salidaAt)
 const horaSalida = computed(() =>
@@ -50,7 +60,7 @@ watch(
     fotos.value = [...(p.despacho?.fotos || [])]
     observacion.value = p.despacho?.observacion || ''
     error.value = ''
-    salen.value = avanceEntregas(p).map((a) => a.falta)
+    salen.value = avanceEntregas(p).map(faltaVista)
   },
 )
 
@@ -63,7 +73,7 @@ async function confirmar() {
     await store.marcarDespacho(props.pedido._id, {
       fotos: fotos.value,
       observacion: observacion.value.trim() || undefined,
-      ...(yaSalio.value ? {} : { cantidades: salen.value.map(Number) }),
+      ...(yaSalio.value ? {} : { cantidades: salenLibras.value }),
     })
     emit('close')
   } catch (err) {
@@ -103,13 +113,14 @@ async function confirmar() {
           <div v-if="!yaSalio" class="field">
             <span>¿Cuánto sale ahora? <em class="opt">· si el cliente recibe por partes, baja la cantidad</em></span>
             <ul class="lineas">
-              <li v-for="(a, i) in avance" :key="i" class="linea" :class="{ 'is-error': !(Number(salen[i]) >= 0 && Number(salen[i]) <= a.falta) }">
+              <li v-for="(a, i) in avance" :key="i" class="linea" :class="{ 'is-error': !(salenLibras[i]! >= 0 && salenLibras[i]! <= a.falta) }">
                 <div class="linea__info">
                   <strong>{{ a.it.productoNombre }}</strong>
                   <small>
-                    Pedido {{ formatQty(a.it.cantidad) }} {{ a.it.unidad }}
-                    <template v-if="a.salio"> · ya salieron {{ formatQty(a.salio) }}</template>
-                    · faltan <b>{{ formatQty(a.falta) }}</b>
+                    Pedido {{ cantidadTexto(a.it) }}
+                    <template v-if="a.salio"> · ya salieron {{ cantidadTexto(a.it, a.salio) }}</template>
+                    · faltan <b>{{ cantidadTexto(a.it, a.falta) }}</b>
+                    <template v-if="a.it.librasPorSaco"> · pon los sacos</template>
                   </small>
                 </div>
                 <input
@@ -117,7 +128,7 @@ async function confirmar() {
                   type="number"
                   inputmode="decimal"
                   min="0"
-                  :max="a.falta"
+                  :max="faltaVista(a)"
                   :disabled="a.falta === 0"
                   class="linea__qty"
                   :aria-label="`Cuánto sale ahora de ${a.it.productoNombre}`"

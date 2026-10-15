@@ -40,6 +40,7 @@ const esperaDesde = computed(() => {
       <i class="fa-solid fa-person-walking-arrow-loop-left" aria-hidden="true"></i>
       Rechazado por el cliente: {{ pedido.rechazoCliente.motivo }}
       <template v-if="pedido.rechazoCliente.yaHabiaSalido"> · la mercadería regresa a bodega</template>
+      <template v-if="pedido.facturacion || pedido.rechazoCliente.yaHabiaSalido"> · Si ya estaba facturado, regístralo como devolución (nota de crédito) en el ERP: ahí el stock vuelve solo al inventario de la app.</template>
       <small>{{ pedido.rechazoCliente.por }} · {{ horaCorta(pedido.rechazoCliente.at) }}</small>
     </p>
     <div v-for="(a, i) in pedido.ajustes || []" :key="`aj${i}`" class="nota is-aviso">

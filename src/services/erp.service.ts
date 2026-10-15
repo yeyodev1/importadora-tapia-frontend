@@ -73,8 +73,11 @@ class ErpService extends APIBase {
     return res.data.data
   }
 
-  /** Marca o desmarca un producto como "solo contado" (admin). */
-  async guardarReglaProducto(proCodigo: string, payload: { soloContado: boolean; proNombre?: string }): Promise<ReglaProducto> {
+  /** Reglas del producto (admin): "solo contado" y/o libras por saco (null = se vende suelto). Solo cambia lo que se envía. */
+  async guardarReglaProducto(
+    proCodigo: string,
+    payload: { soloContado?: boolean; librasPorSaco?: number | null; proNombre?: string },
+  ): Promise<ReglaProducto> {
     const res = await this.put<{ success: boolean; data: ReglaProducto }>(`inventario/reglas/${encodeURIComponent(proCodigo)}`, payload)
     return res.data.data
   }

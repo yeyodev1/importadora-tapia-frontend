@@ -77,7 +77,9 @@ async function confirmar() {
           <p class="ayuda">
             El pedido queda <b>Rechazado por el cliente</b>: ya no sale como pendiente de entregar, le devuelve el cupo al asesor y no suma en
             sus ventas.<template v-if="yaSalio"> La mercadería ya había salido: regresa a bodega.</template>
-            Se avisa a administración y al asesor. Recuerden revertirlo en el sistema de Tapia.
+            Se avisa a administración y al asesor.
+            <template v-if="pedido.facturacion || yaSalio"><br /><b>Ya estaba facturado:</b> registren la devolución (nota de crédito) en el ERP; ahí el stock vuelve solo al inventario de la app.</template>
+            <template v-else> Como aún no se facturó, su stock vuelve a quedar disponible al instante.</template>
           </p>
 
           <div class="field">

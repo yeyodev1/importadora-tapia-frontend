@@ -31,6 +31,10 @@ export const esModificable = (p: Pedido) =>
 /** Pedido aprobado (haya salido o no de bodega) que el cliente puede no recibir. */
 export const puedeRechazoCliente = (p: Pedido) => p.estado === 'aprobado'
 
+/** Aprobado que el ERP aún no descuenta (sin facturar ni salir de bodega): aparta su stock. */
+export const porFacturar = (p: Pedido) =>
+  p.estado === 'aprobado' && !p.facturacion && !p.despacho?.salidaAt && !p.entregas?.length
+
 /** Hora corta para el historial: "06 oct, 10:42". */
 export const horaCorta = (iso: string) =>
   new Date(iso).toLocaleString('es-EC', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
