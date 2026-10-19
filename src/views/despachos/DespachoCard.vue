@@ -6,9 +6,9 @@ import EntregasParciales from './EntregasParciales.vue'
 import FacturacionPedido from '../pedidos/FacturacionPedido.vue'
 import { avanceEntregas, esEntregaParcial } from './entregas'
 import { fechaCorta } from '@/composables/useAlertasPedidos'
-import { formatDate, formatQty, formatPlazo } from '@/utils/format'
+import { formatDate, formatQty, formatPlazo, formatMoney } from '@/utils/format'
 import { sacosDe } from '@/utils/sacos'
-import type { Pedido } from '@/types/erp'
+import type { Pedido, PedidoItem } from '@/types/erp'
 
 /** Tarjeta de un pedido para bodega: qué sale, en qué estado está y su salida. */
 const props = defineProps<{ pedido: Pedido }>()
@@ -39,6 +39,10 @@ const estado = computed((): { tone: Tono; label: string } => {
   return { tone: 'warning', label: 'Pendiente de revisión' }
 })
 
+/** Precio como lo puso el asesor: por libra si el producto sale en saco. */
+const precioTexto = (it: PedidoItem) =>
+  it.librasPorSaco ? `${formatMoney(it.precioUnitario)} por ${(it.unidad || 'libra').toLowerCase().replace(/s$/, '')}` : `${formatMoney(it.precioUnitario)} c/u`
+
 const hora = (d: Date) => d.toLocaleString('es-EC', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fill,w_120,h_120/')
 </script>
@@ -62,6 +66,11 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
         </span>
         <span class="dc__uni">{{ it.librasPorSaco ? 'Sacos' : it.unidad }}<small v-if="it.librasPorSaco" class="dc__lbs">{{ formatQty(it.cantidad) }} {{ it.unidad }}</small></span>
         <span class="dc__prod">{{ it.productoNombre }}<small v-if="it.bodega">{{ it.bodega }}</small></span>
+        <span class="dc__precio">{{ formatMoney(it.subtotal) }}<small>{{ precioTexto(it) }}</small></span>
+      </li>
+      <li class="dc__total">
+        <span>Total del pedido</span>
+        <b>{{ formatMoney(pedido.total) }}</b>
       </li>
     </ul>
 
@@ -165,6 +174,15 @@ const miniatura = (u: string) => u.replace('/image/upload/', '/image/upload/c_fi
   &__prod {
     flex: 1; min-width: 0; font-size: 0.86rem; font-weight: 600;
     small { display: block; font-size: 0.68rem; font-weight: 500; color: var(--text-faint); }
+  }
+  &__precio {
+    margin-left: auto; text-align: right; font-size: 0.84rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap;
+    small { display: block; font-size: 0.64rem; font-weight: 500; color: var(--text-faint); }
+  }
+  &__total {
+    justify-content: space-between; background: rgba($primary, 0.06);
+    span { font-size: 0.78rem; font-weight: 600; color: var(--text-soft); }
+    b { font-size: 0.95rem; font-weight: 800; font-variant-numeric: tabular-nums; }
   }
 
   &__lbs { display: block; font-size: 0.62rem; color: var(--text-faint); white-space: nowrap; }
