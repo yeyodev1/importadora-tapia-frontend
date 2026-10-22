@@ -59,6 +59,9 @@ function next() {
     <transition name="cm">
       <div v-if="open" class="cm-backdrop" @click.self="!loading && emit('cancel')">
         <div class="cm" role="alertdialog" aria-modal="true" :class="{ 'is-danger': danger, 'is-step2': step === 2 }">
+          <button type="button" class="cm__x" aria-label="Cerrar" :disabled="loading" @click="emit('cancel')">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
           <div class="cm__icon">
             <i class="fa-solid" :class="danger ? (step === 2 ? 'fa-triangle-exclamation' : 'fa-trash-can') : 'fa-circle-question'"></i>
           </div>
@@ -105,6 +108,7 @@ function next() {
 }
 
 .cm {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -115,6 +119,25 @@ function next() {
   background: var(--surface);
   box-shadow: var(--shadow-pop);
   text-align: center;
+
+  &__x {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    font-size: 1rem;
+    color: var(--text-faint);
+    cursor: pointer;
+    &:hover { color: var(--text); }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+  }
 
   &__icon {
     display: flex;

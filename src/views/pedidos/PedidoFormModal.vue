@@ -180,17 +180,30 @@ async function guardar() {
 <style lang="scss" scoped>
 .backdrop {
   position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-end; justify-content: center;
-  background: rgba($primary-dark, 0.5); backdrop-filter: blur(3px);
-  @media (min-width: 641px) { align-items: center; padding: 16px; }
+  background: rgba($primary-dark, 0.5);
+  // El blur solo en escritorio: en celular hace lento el scroll.
+  @media (min-width: 641px) { align-items: center; padding: 16px; backdrop-filter: blur(3px); }
 }
 .sheet {
-  width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto;
+  width: 100%; max-width: 480px; max-height: 92vh; max-height: calc(100dvh - 32px); overflow-y: auto;
+  // Scroll con inercia en iOS y sin arrastrar la página de atrás.
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
   background: var(--surface); box-shadow: var(--shadow-pop);
   border-radius: 18px 18px 0 0; padding: 22px 20px 20px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
   @media (min-width: 641px) { border-radius: 16px; }
-  &__head { display: flex; align-items: center; justify-content: space-between; }
+  // Encabezado pegado arriba: la X para cerrar siempre a la vista.
+  &__head {
+    position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between;
+    margin: -22px -20px 0; padding: 14px 20px 10px; background: var(--surface); border-bottom: 1px solid var(--border);
+  }
   &__head h2 { font-size: 1.1rem; font-weight: 800; }
-  &__x { border: none; background: transparent; font-size: 1rem; color: var(--text-faint); cursor: pointer; padding: 4px 8px; }
+  &__x {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 40px; height: 40px;
+    border: 1px solid var(--border); border-radius: 9px; background: var(--surface);
+    font-size: 1rem; color: var(--text-soft); cursor: pointer;
+    &:hover { color: var(--text); border-color: var(--border-strong); }
+  }
   &__note { margin: 8px 0 16px; font-family: $font-secondary; font-size: 0.76rem; color: var(--text-soft);
     background: rgba($primary, 0.06); border: 1px solid rgba($primary, 0.14); border-radius: 9px; padding: 10px 12px; }
 }

@@ -266,7 +266,9 @@ async function guardar() {
 
   &__count { font-family: $font-secondary; font-size: 0.76rem; color: var(--text-soft); white-space: nowrap; b { color: $primary; } }
   &__acciones { display: flex; flex-wrap: wrap; gap: 14px; }
-  &__list { display: flex; flex-direction: column; gap: 6px; max-height: 42vh; overflow-y: auto; padding-right: 2px; }
+  &__list { display: flex; flex-direction: column; gap: 6px; padding-right: 2px;
+    // En celular el modal entero hace el scroll (dos scrolls anidados se traban con el dedo).
+    @media (min-width: 560px) { max-height: 42vh; overflow-y: auto; } }
 }
 
 .link { background: none; border: none; padding: 0; color: $primary; font: inherit; font-size: 0.76rem; font-weight: 700; cursor: pointer; &:hover { text-decoration: underline; } }

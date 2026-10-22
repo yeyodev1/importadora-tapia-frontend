@@ -37,6 +37,8 @@ const icons: Record<string, string> = {
   fileSign: 'fa-file-signature',
   truck: 'fa-truck-ramp-box',
   ventas: 'fa-ranking-star',
+  existencias: 'fa-clipboard-check',
+  notaCredito: 'fa-file-circle-minus',
 }
 
 const allSections: { title: string; items: NavItem[] }[] = [
@@ -57,6 +59,7 @@ const allSections: { title: string; items: NavItem[] }[] = [
     items: [
       { to: '/bodega', label: 'Despachos', icon: 'truck', roles: ['admin', 'bodega'] },
       { to: '/inventario', label: 'Inventario', icon: 'box' },
+      { to: '/existencias', label: 'Existencias · qué hay', icon: 'existencias', roles: ['admin', 'vendedor'] },
     ],
   },
   {
@@ -74,6 +77,7 @@ const allSections: { title: string; items: NavItem[] }[] = [
       { to: '/cartera/facturas', label: 'Cartera · Facturas', icon: 'file' },
       { to: '/cartera/consolidada', label: 'Cartera · Consolidada', icon: 'chart' },
       { to: '/cobros', label: 'Cobros', icon: 'cash' },
+      { to: '/notas-credito', label: 'Notas de crédito', icon: 'notaCredito', roles: ['admin', 'vendedor'] },
     ],
   },
   {

@@ -143,7 +143,9 @@ const miniatura = (a: FacturaAdjunto) => a.url.replace('/image/upload/', '/image
 
 .selector { margin-bottom: 12px; }
 .vacio { display: flex; align-items: center; gap: 8px; margin: 6px 0 12px; font-family: $font-secondary; font-size: 0.8rem; color: var(--text-soft); }
-.lista { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; max-height: 50vh; overflow-y: auto; }
+.lista { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;
+  // En celular el modal entero hace el scroll (dos scrolls anidados se traban con el dedo).
+  @media (min-width: 560px) { max-height: 50vh; overflow-y: auto; } }
 .item {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   &__abrir {

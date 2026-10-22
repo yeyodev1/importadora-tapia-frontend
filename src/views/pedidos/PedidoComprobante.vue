@@ -145,7 +145,10 @@ Estado: ${estadoTexto[p.estado] || p.estado}${p.estado === 'en_espera' && p.moti
 <style lang="scss" scoped>
 .backdrop {
   position: fixed; inset: 0; z-index: 110; display: grid; place-items: center; padding: 16px;
-  background: rgba($primary-dark, 0.55); backdrop-filter: blur(3px); overflow-y: auto;
+  background: rgba($primary-dark, 0.55); overflow-y: auto;
+  // Scroll con inercia en iOS y sin arrastrar la página de atrás; blur solo en escritorio.
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  @media (min-width: 641px) { backdrop-filter: blur(3px); }
 }
 .wrap { width: 100%; max-width: 460px; }
 .doc {

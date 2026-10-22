@@ -162,7 +162,9 @@ async function guardar(quitar = false) {
     &:focus { outline: none; border-color: $primary; } } }
 
 .ayuda { font-family: $font-secondary; font-size: 0.76rem; color: var(--text-soft); margin-bottom: 10px; }
-.asesores { list-style: none; display: flex; flex-direction: column; gap: 6px; max-height: 46vh; overflow-y: auto; margin-bottom: 10px; }
+.asesores { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;
+  // En celular el modal entero hace el scroll (dos scrolls anidados se traban con el dedo).
+  @media (min-width: 560px) { max-height: 46vh; overflow-y: auto; } }
 .asesor {
   display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px;
   font-family: $font-secondary;

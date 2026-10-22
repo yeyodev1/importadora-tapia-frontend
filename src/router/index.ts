@@ -56,6 +56,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: 'Inventario' },
       },
       {
+        path: 'existencias',
+        name: 'Existencias',
+        component: () => import('../views/ExistenciasView.vue'),
+        meta: { title: 'Existencias', roles: ['admin', 'vendedor'] },
+      },
+      {
         path: 'cartera/facturas',
         name: 'CarteraFacturas',
         component: () => import('../views/CarteraFacturasView.vue'),
@@ -109,6 +115,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'Solicitud',
         component: () => import('../views/SolicitudFormView.vue'),
         meta: { title: 'Solicitud de crédito' },
+      },
+      {
+        path: 'notas-credito',
+        name: 'NotasCredito',
+        component: () => import('../views/NotasCreditoView.vue'),
+        meta: { title: 'Notas de crédito', roles: ['admin', 'vendedor'] },
       },
       {
         path: 'bodega',
