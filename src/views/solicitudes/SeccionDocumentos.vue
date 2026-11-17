@@ -8,7 +8,7 @@ import type { DocumentoSolicitud, SolicitudDatos, TipoDocumento } from '@/types/
 const props = defineProps<{ datos: SolicitudDatos; disabled: boolean }>()
 const emit = defineEmits<{ ocupado: [v: boolean] }>()
 
-const min = computed(() => minimos(props.datos.tipoPersona))
+const min = computed(() => minimos(props.datos.tipoPersona, props.datos.pideCredito))
 const archivosDe = (tipo: TipoDocumento) => props.datos.documentos.filter((d) => d.tipo === tipo)
 
 /** Cuántos documentos están subiendo a la vez (para bloquear el guardado). */

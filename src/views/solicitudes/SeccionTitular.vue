@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import RouteMap from '@/components/ui/RouteMap.vue'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { useErpStore } from '@/stores/erp'
+import { obtenerUbicacion } from '@/utils/geo'
 import { PERSONA_LABEL } from './documentos'
 import type { SolicitudDatos, TipoPersona } from '@/types/solicitudes'
 
@@ -13,6 +16,24 @@ const PERSONAS: { v: TipoPersona; desc: string }[] = [
   { v: 'juridica', desc: 'Compañía con representante legal' },
 ]
 const FORMAS = ['Contado', 'Crédito', 'Cheque', 'Transferencia']
+
+/** GPS opcional: el vendedor lo toma parado en el local del cliente. */
+const ubicando = ref(false)
+const errorGps = ref('')
+async function tomarUbicacion() {
+  ubicando.value = true
+  errorGps.value = ''
+  try {
+    props.datos.ubicacion = await obtenerUbicacion()
+  } catch (err) {
+    errorGps.value = (err as Error).message
+  } finally {
+    ubicando.value = false
+  }
+}
+const paradas = computed(() =>
+  props.datos.ubicacion ? [{ ...props.datos.ubicacion, label: props.datos.negocio.nombre || 'Negocio', hora: '' }] : [],
+)
 
 const digitos = (x: string | null | undefined) => String(x || '').replace(/\D/g, '')
 
@@ -64,7 +85,7 @@ const yaExiste = computed(() => {
     </div>
 
     <label class="fld"><span>Cédula de identidad <em>*</em></span>
-      <input id="sol-cedula" v-model="datos.titular.cedula" type="text" inputmode="numeric" maxlength="10" :disabled="disabled" />
+      <input id="sol-cedula" v-model.trim="datos.titular.cedula" type="text" inputmode="numeric" pattern="\d{10}" maxlength="10" :disabled="disabled" />
     </label>
 
     <div class="fld">
@@ -91,7 +112,7 @@ const yaExiste = computed(() => {
         <input id="sol-negocio" v-model="datos.negocio.nombre" type="text" :disabled="disabled" />
       </label>
       <label class="fld"><span>N.º de RUC <em v-if="datos.tipoPersona !== 'natural'">*</em></span>
-        <input id="sol-ruc" v-model="datos.negocio.ruc" type="text" inputmode="numeric" maxlength="13" :disabled="disabled" />
+        <input id="sol-ruc" v-model.trim="datos.negocio.ruc" type="text" inputmode="numeric" pattern="\d{13}" maxlength="13" :disabled="disabled" />
       </label>
     </div>
 
@@ -106,6 +127,41 @@ const yaExiste = computed(() => {
       <label class="fld"><span>Número de celular <em>*</em></span>
         <input id="sol-celular" v-model="datos.negocio.celular" type="tel" :disabled="disabled" />
       </label>
+    </div>
+
+    <label class="fld"><span>Correo del cliente</span>
+      <input
+        id="sol-correo"
+        v-model.trim="datos.negocio.correo"
+        type="email"
+        autocomplete="off"
+        autocapitalize="none"
+        autocorrect="off"
+        spellcheck="false"
+        maxlength="120"
+        :disabled="disabled"
+      />
+    </label>
+
+    <div class="fld">
+      <span>Ubicación del negocio (opcional)</span>
+      <template v-if="datos.ubicacion">
+        <RouteMap :paradas="paradas" class="mapa" />
+        <small class="gps">
+          {{ datos.ubicacion.lat.toFixed(5) }}, {{ datos.ubicacion.lng.toFixed(5) }} ·
+          <a :href="`https://www.google.com/maps?q=${datos.ubicacion.lat},${datos.ubicacion.lng}`" target="_blank" rel="noopener">Abrir en Maps</a>
+        </small>
+      </template>
+      <div v-if="!disabled" class="gps__btns">
+        <button type="button" class="gps__btn" :disabled="ubicando" @click="tomarUbicacion">
+          <BaseSpinner v-if="ubicando" :size="14" />
+          <i v-else class="fa-solid fa-location-crosshairs"></i>
+          {{ datos.ubicacion ? 'Volver a tomar' : 'Usar mi ubicación actual' }}
+        </button>
+        <button v-if="datos.ubicacion" type="button" class="gps__btn" @click="datos.ubicacion = null">Quitar</button>
+      </div>
+      <small v-if="!datos.ubicacion && !disabled" class="gps">Tómala estando en el local del cliente.</small>
+      <p v-if="errorGps" class="aviso is-error" role="alert">{{ errorGps }}</p>
     </div>
 
     <div class="fila">
@@ -129,6 +185,20 @@ const yaExiste = computed(() => {
 
 <style lang="scss" scoped>
 @use './solicitud-form';
+
+.fld .mapa { height: 200px; }
+.gps {
+  font-family: $font-secondary; font-size: 0.74rem; color: var(--text-soft);
+  a { color: $primary; font-weight: 600; }
+  &__btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  &__btn {
+    display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 14px;
+    border: 1px solid var(--border-strong); border-radius: 9px; background: var(--surface); color: var(--text);
+    font-family: $font-principal; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    &:hover:not(:disabled) { border-color: $primary; color: $primary; }
+    &:disabled { opacity: 0.6; cursor: wait; }
+  }
+}
 
 .personas {
   display: flex;

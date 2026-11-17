@@ -5,6 +5,7 @@ import BaseBadge from '@/components/ui/BaseBadge.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SeccionTitular from './solicitudes/SeccionTitular.vue'
+import SeccionCredito from './solicitudes/SeccionCredito.vue'
 import SeccionReferencias from './solicitudes/SeccionReferencias.vue'
 import SeccionDocumentos from './solicitudes/SeccionDocumentos.vue'
 import PanelRevision from './solicitudes/PanelRevision.vue'
@@ -62,7 +63,7 @@ async function guardar(enviar: boolean) {
 
 const titulo = computed(() => {
   if (f.actual.value) return `Solicitud ${f.actual.value.numero}`
-  return f.datos.tipo === 'nuevo' ? 'Nueva solicitud · cliente nuevo' : 'Actualización de datos'
+  return f.datos.tipo === 'nuevo' ? 'Nuevo cliente' : 'Actualización de datos'
 })
 const nombre = computed(
   () => [f.datos.titular.nombres, f.datos.titular.apellidos].filter(Boolean).join(' ') || f.datos.negocio.nombre,
@@ -113,18 +114,23 @@ const pendientes = computed(() => f.pendientes.value)
       </p>
       <p v-else-if="f.actual.value?.estado === 'aprobada'" class="aviso is-ok">
         <i class="fa-solid fa-circle-check"></i>
-        <span>Aprobada. Ya no se puede editar.</span>
+        <span>
+          Aprobada. Ya no se puede editar.
+          <template v-if="f.actual.value.clienteCodigo"> Dado de alta en el ERP con código <b>{{ f.actual.value.clienteCodigo }}</b>.</template>
+          <template v-else-if="f.datos.tipo === 'nuevo'"> Pendiente de alta en el ERP.</template>
+        </span>
       </p>
 
       <PanelRevision v-if="userStore.isAdmin && f.actual.value" :solicitud="f.actual.value" @actualizada="f.actualizar" />
 
+      <SeccionCredito :datos="f.datos" :disabled="!f.editable.value" />
       <SeccionTitular :datos="f.datos" :disabled="!f.editable.value" />
-      <SeccionReferencias :datos="f.datos" :disabled="!f.editable.value" />
+      <SeccionReferencias v-if="f.datos.pideCredito" :datos="f.datos" :disabled="!f.editable.value" />
       <SeccionDocumentos :datos="f.datos" :disabled="!f.editable.value" @ocupado="(v) => (f.subiendo.value = v)" />
 
       <section class="bloque">
-        <header class="bloque__head"><h2>Autorización y firma</h2></header>
-        <label class="autoriza">
+        <header class="bloque__head"><h2>{{ f.datos.pideCredito ? 'Autorización y firma' : 'Observación' }}</h2></header>
+        <label v-if="f.datos.pideCredito" class="autoriza">
           <input id="sol-autoriza" v-model="f.datos.autorizaBuro" type="checkbox" :disabled="!f.editable.value" />
           <span>
             El cliente firmó la autorización: «Autorizo expresamente a <b>Importadora Tapia Berzoza IMCATABE Cía. Ltda.</b>

@@ -8,7 +8,7 @@ import SkeletonTable from '@/components/ui/SkeletonTable.vue'
 import { useSolicitudesStore } from '@/stores/solicitudes'
 import { useUserStore } from '@/stores/user'
 import { ESTADO_LABEL, ESTADO_TONE } from './solicitudes/documentos'
-import { formatDate } from '@/utils/format'
+import { formatDate, formatMoney } from '@/utils/format'
 import type { SolicitudCredito } from '@/types/solicitudes'
 
 const store = useSolicitudesStore()
@@ -22,7 +22,7 @@ const filtro = ref<Filtro>('todas')
 
 function coincide(s: SolicitudCredito, v: Filtro) {
   if (v === 'todas') return true
-  if (v === 'sin_relacionar') return !s.clienteCodigo && s.estado !== 'borrador'
+  if (v === 'sin_relacionar') return !s.clienteCodigo && s.estado === 'aprobada'
   return s.estado === v
 }
 
@@ -34,7 +34,7 @@ const filtros = computed(() => {
     { v: 'aprobada', label: 'Aprobadas' },
     { v: 'rechazada', label: 'Rechazadas' },
   ]
-  if (userStore.isAdmin) base.push({ v: 'sin_relacionar', label: 'Sin relacionar al ERP' })
+  if (userStore.isAdmin) base.push({ v: 'sin_relacionar', label: 'Por dar de alta en ERP' })
   return base.map((f) => ({ ...f, n: store.data.filter((s) => coincide(s, f.v)).length }))
 })
 
@@ -47,8 +47,8 @@ const nombre = (s: SolicitudCredito) =>
 <template>
   <div>
     <PageHeader
-      title="Solicitudes de crédito"
-      subtitle="Clientes nuevos y actualización de datos, con sus documentos."
+      title="Clientes nuevos y crédito"
+      subtitle="Alta de clientes, solicitudes de crédito y actualización de datos, con sus documentos."
       source="local"
       :count="store.fetchedAt ? store.data.length : null"
       :refreshing="store.loading && !!store.fetchedAt"
@@ -80,7 +80,7 @@ const nombre = (s: SolicitudCredito) =>
     <EmptyState
       v-else-if="!store.data.length"
       title="Sin solicitudes todavía"
-      message="Toca «Nuevo cliente» para llenar la solicitud de crédito y subir sus documentos. Para un cliente que ya existe, usa «Actualizar datos» en su ficha."
+      message="Toca «Nuevo cliente» para registrarlo (con o sin crédito) y subir sus documentos. Para un cliente que ya existe, usa «Actualizar datos» en su ficha."
     />
     <EmptyState v-else-if="!lista.length" title="Nada en este filtro" message="Elige otro filtro para ver más solicitudes." />
 
@@ -96,10 +96,14 @@ const nombre = (s: SolicitudCredito) =>
               <template v-if="userStore.isAdmin"> · {{ s.vendedorNombre }}</template>
             </small>
             <span class="tags">
+              <span class="tag">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+                {{ s.pideCredito === false ? 'Solo alta · contado' : `Crédito ${s.cupoSolicitado ? formatMoney(s.cupoSolicitado) : ''}${s.plazoDias ? ` · ${s.plazoDias} días` : ''}` }}
+              </span>
               <span class="tag"><i class="fa-solid fa-paperclip"></i> {{ s.documentos.length }} archivos</span>
               <span class="tag" :class="s.clienteCodigo ? 'is-ok' : 'is-pend'">
                 <i class="fa-solid fa-link"></i>
-                {{ s.clienteCodigo ? `ERP ${s.clienteCodigo}` : 'Sin relacionar al ERP' }}
+                {{ s.clienteCodigo ? `ERP ${s.clienteCodigo}` : 'Sin alta en el ERP' }}
               </span>
             </span>
           </span>
