@@ -15,7 +15,7 @@ export async function obtenerUbicacion(): Promise<{ lat: number; lng: number }> 
     return { lat: p.coords.latitude, lng: p.coords.longitude }
   } catch (err) {
     if ((err as GeolocationPositionError)?.code === 1) {
-      throw new Error('Debes permitir el acceso a tu ubicación para registrar la visita. Actívalo en los ajustes del navegador y vuelve a intentar.')
+      throw new Error('Debes permitir el acceso a tu ubicación. Actívalo en los ajustes del navegador y vuelve a intentar.')
     }
   }
   try {

@@ -63,23 +63,23 @@ const vincular = (codigo: string) => ejecutar(() => solicitudesService.vincular(
       <div class="panel__txt">
         <strong>Cliente en el ERP</strong>
         <small v-if="solicitud.clienteCodigo">
-          Relacionada con <b>{{ solicitud.clienteNombre }}</b> (código {{ solicitud.clienteCodigo }}).
+          Dado de alta como <b>{{ solicitud.clienteNombre }}</b> (código {{ solicitud.clienteCodigo }}).
         </small>
-        <small v-else>Sin relacionar. Cuando Tapia cree el cliente en su sistema, relaciónalo aquí.</small>
+        <small v-else>Pendiente de alta. Cuando Tapia cree el cliente en el ERP, ingresa aquí su código.</small>
       </div>
       <div class="panel__btns">
         <RouterLink v-if="solicitud.clienteCodigo" :to="`/clientes/${solicitud.clienteCodigo}`" class="btn">
           <i class="fa-solid fa-address-card"></i> Ver ficha
         </RouterLink>
         <button type="button" class="btn" @click="abrir('vincular')">
-          <i class="fa-solid fa-link"></i> {{ solicitud.clienteCodigo ? 'Cambiar' : 'Relacionar' }}
+          <i class="fa-solid fa-link"></i> {{ solicitud.clienteCodigo ? 'Cambiar' : 'Marcar dado de alta' }}
         </button>
       </div>
     </div>
 
     <ConfirmModal
       :open="modal === 'aprobar'"
-      title="Aprobar solicitud de crédito"
+      :title="solicitud.pideCredito === false ? 'Aprobar alta de cliente' : 'Aprobar solicitud de crédito'"
       :subject="solicitud.numero"
       message="Se le avisará al vendedor por correo que la solicitud fue aprobada."
       confirm-label="Aprobar"

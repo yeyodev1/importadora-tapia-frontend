@@ -66,12 +66,13 @@
     border: 1px solid var(--border-strong);
     border-radius: 9px;
     font-family: $font-secondary;
-    font-size: 0.9rem;
+    font-size: 1rem; // < 16px hace zoom en iOS
     color: var(--text);
     background: var(--surface);
     resize: vertical;
 
     &:focus { outline: none; border-color: $primary; box-shadow: 0 0 0 3px rgba($primary, 0.12); }
+    &:user-invalid { border-color: $alert-error; background: $alert-error-bg; }
     &:disabled { background: rgba($primary-dark, 0.03); color: var(--text-soft); }
   }
 }

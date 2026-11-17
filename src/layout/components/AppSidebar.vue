@@ -50,7 +50,7 @@ const allSections: { title: string; items: NavItem[] }[] = [
     title: 'Comercial',
     items: [
       { to: '/clientes', label: 'Clientes', icon: 'users' },
-      { to: '/solicitudes', label: 'Solicitudes de crédito', icon: 'fileSign' },
+      { to: '/solicitudes', label: 'Clientes nuevos y crédito', icon: 'fileSign' },
       { to: '/vendedores', label: 'Vendedores', icon: 'briefcase', adminOnly: true },
     ],
   },

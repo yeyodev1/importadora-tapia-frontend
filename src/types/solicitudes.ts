@@ -47,7 +47,14 @@ export interface SolicitudDatos {
     celular: string
     direccionDomicilio: string
     telefonoDomicilio: string
+    correo: string
   }
+  /** GPS del negocio tomado en el local (opcional). */
+  ubicacion?: { lat: number; lng: number } | null
+  /** false = solo alta del cliente (contado), sin solicitud de crédito. */
+  pideCredito: boolean
+  cupoSolicitado?: number | null
+  plazoDias?: number | null
   refComerciales: RefComercial[]
   refBancarias: RefBancaria[]
   refPersonales: RefPersonal[]
