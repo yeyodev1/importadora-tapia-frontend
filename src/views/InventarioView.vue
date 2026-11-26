@@ -185,6 +185,7 @@ function stockLabel(value: string): string {
         <small v-else-if="row.reservado" class="stock__res">
           {{ formatQty(row.stock_actual) }} en ERP · {{ formatQty(row.reservado) }} apartado
         </small>
+        <button v-else-if="row.reservadoPor" type="button" class="stock__res stock__res--btn" @click="reservasDe = row">Separar para traslado</button>
       </template>
       <template #cell-solo_contado="{ row }">
         <button
@@ -239,6 +240,7 @@ function stockLabel(value: string): string {
           <button v-if="row.reservado && row.reservadoPor" type="button" class="stock__res stock__res--btn" @click="reservasDe = row">
             Ver qué OP lo apartan
           </button>
+          <button v-else-if="row.reservadoPor" type="button" class="stock__res stock__res--btn" @click="reservasDe = row">Separar para traslado</button>
           <button
             v-if="userStore.isAdmin"
             type="button"
