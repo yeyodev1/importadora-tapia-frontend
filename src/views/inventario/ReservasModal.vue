@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import SepararTraslado from './SepararTraslado.vue'
+import { erpService } from '@/services/erp.service'
 import { usePedidosStore } from '@/stores/pedidos'
 import { LABEL_ESTADO } from '../pedidos/estadoPedido'
 import { formatQty } from '@/utils/format'
-import type { InventarioItem } from '@/types/erp'
+import type { EstadoPedido, InventarioItem, ReservaPedido } from '@/types/erp'
 import type { ApiError } from '@/types'
 
 /**
@@ -22,12 +24,13 @@ const error = ref('')
 
 const lista = computed(() => props.producto?.reservadoPor || [])
 
-async function marcar(id: string, pendienteErp?: boolean) {
+async function marcar({ id, pendienteErp, separacion }: ReservaPedido) {
   if (guardando.value) return
   guardando.value = id
   error.value = ''
   try {
-    if (pendienteErp) await pedidos.setErpDescontado(id)
+    if (separacion) await erpService.liberarSeparacion(id)
+    else if (pendienteErp) await pedidos.setErpDescontado(id)
     else await pedidos.setFacturado(id, true)
     emit('facturado', id)
   } catch (e) {
@@ -64,13 +67,14 @@ async function marcar(id: string, pendienteErp?: boolean) {
                 <strong>{{ r.numero }} · {{ formatQty(r.cantidad) }} {{ producto.uni_nombre }}</strong>
                 <small>
                   {{ r.clienteNombre }} ·
-                  <template v-if="r.pendienteErp">Facturado en la app, el ERP aún no lo descuenta</template>
-                  <template v-else>{{ LABEL_ESTADO[r.estado] || r.estado }}</template>
+                  <template v-if="r.separacion">separó, va en camión; el ERP aún no hace el egreso</template>
+                  <template v-else-if="r.pendienteErp">Facturado en la app, el ERP aún no lo descuenta</template>
+                  <template v-else>{{ LABEL_ESTADO[r.estado as EstadoPedido] || r.estado }}</template>
                 </small>
               </div>
-              <button v-if="r.estado === 'aprobado'" type="button" class="op__btn" :disabled="!!guardando" @click="marcar(r.id, r.pendienteErp)">
+              <button v-if="r.estado === 'aprobado' || r.separacion" type="button" class="op__btn" :disabled="!!guardando" @click="marcar(r)">
                 <BaseSpinner v-if="guardando === r.id" :size="12" light />
-                {{ r.pendienteErp ? 'El ERP ya lo descontó' : 'Ya está facturado' }}
+                {{ r.separacion ? 'Ya salió en el ERP' : r.pendienteErp ? 'El ERP ya lo descontó' : 'Ya está facturado' }}
               </button>
               <small v-else class="op__nota">Aún sin aprobar</small>
             </li>
@@ -78,6 +82,8 @@ async function marcar(id: string, pendienteErp?: boolean) {
           </ul>
 
           <p v-if="error" class="modal__error" role="alert">{{ error }}</p>
+
+          <SepararTraslado :producto="producto" @separado="emit('facturado', '')" />
 
           <div class="modal__actions">
             <div class="modal__btns">
