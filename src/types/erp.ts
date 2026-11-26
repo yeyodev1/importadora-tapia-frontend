@@ -47,11 +47,13 @@ export interface CarteraConsolidada {
 export interface ReservaPedido {
   id: string
   numero: string
-  estado: EstadoPedido
+  estado: EstadoPedido | 'separado'
   clienteNombre: string
   cantidad: number
   /** Ya marcada facturada o salida, pero el ERP aún no baja ese stock. */
   pendienteErp?: boolean
+  /** No es una OP: mercadería separada para un traslado (p.ej. camión a Quito). */
+  separacion?: boolean
 }
 
 export interface InventarioItem {
