@@ -96,6 +96,16 @@ class ErpService extends APIBase {
     return res.data.data
   }
 
+  /** Aparta mercadería que sale en camión a otra bodega hasta que el ERP haga el egreso. */
+  async separarTraslado(payload: { productoCodigo: string; bodega: string; cantidad: number; destino: string }): Promise<void> {
+    await this.post('inventario/separaciones', payload)
+  }
+
+  /** El ERP ya hizo el egreso del traslado: deja de apartar. */
+  async liberarSeparacion(id: string): Promise<void> {
+    await this.patch(`inventario/separaciones/${id}/liberar`, {})
+  }
+
   async getCarteraFacturas(): Promise<FacturaCartera[]> {
     const res = await this.get<ErpListResponse<FacturaCartera>>('erp/cartera/facturas')
     return res.data.data
